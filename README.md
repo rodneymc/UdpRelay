@@ -1,7 +1,7 @@
 # UdpRelay
 Allow a remote UDP service to appear as a local service on an android device. A form of port forwarding.
 
-Example: you have a remote service running on 192.0.2.0:1194.
+Example: you have a remote service running on 203.0.113.10:1194.
 This app will allow you to forward traffic so the service appears to be running on the local network
 eg 192.168.49.130:1194
 
