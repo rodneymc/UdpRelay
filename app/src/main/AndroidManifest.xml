@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <!--
 
 This file is part of UdpRelay.
@@ -19,7 +21,7 @@ This file is part of UdpRelay.
 
 -->
 
-<?xml version="1.0" encoding="utf-8"?>
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.daftdroid.simpleapps.udprelay">
 
