@@ -22,75 +22,50 @@ package com.daftdroid.simpleapps.udprelay;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
+import android.widget.LinearLayout;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private Relay outRelay, inRelay;
 
-    /*
-        Hard coded addresses. TODO this should be replaced with a user interface!
-     */
-
-    private final String EPHEMERAL_IP = null;
-    private final int EPHEMERAL_PORT = 0;
-    private final String ANDROID_LOCAL_IP = "192.168.42.129";
-    private final int ANDROID_LOCAL_PORT = 1195;
-    private final String ANDROID_PUBLIC_IP = EPHEMERAL_IP;
-    private final int ANDROID_PUBLIC_PORT = EPHEMERAL_PORT;
-    private final String SERVER_IP = "203.0.113.10";
-    private final int SERVER_PORT = 1194;
-    private final String CLIENT_IP = "192.168.42.10";
-    private final int CLIENT_PORT = ANDROID_LOCAL_PORT;
+    private final List<RelayButton> relays = new ArrayList<RelayButton>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button b = (Button) findViewById(R.id.button);
-        b.setOnClickListener(this);
+        // TODO using the demo configs, do something better than this, but if you want to get
+        // going you can edit the demo configs to fit your system
+
+        for (RelaySpec rs: RelaySpec.exampleRelays)
+        {
+            addRelay(rs);
+        }
     }
     @Override
     public void onClick(View v) {
-        try {
-            Button b = (Button) v;
-            if (outRelay == null) {
-                outRelay = new Relay(ANDROID_LOCAL_IP, ANDROID_LOCAL_PORT, ANDROID_PUBLIC_IP,
-                        ANDROID_PUBLIC_PORT, SERVER_IP, SERVER_PORT);
-                inRelay = new Relay(outRelay, CLIENT_IP, CLIENT_PORT);
-                inRelay.setName("In relay");
-                inRelay.start();
-                outRelay.setName("Out relay");
-                outRelay.start();
-                b.setText("stop");
-            } else {
-                cleanUp();
-                b.setText("start");
-            }
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-            cleanUp();
-        }
+         RelayButton b = (RelayButton) v;
+         b.click();
     }
-    /*
-        Cleanup function terminates the threads and nulls the references to them.
-        Nulling the refs allows GC, also a null reference is used to indicate that
-        we are not currently running.
-     */
-    private void cleanUp()
+
+    private void addRelay(RelaySpec rSpec)
     {
-        if (outRelay != null)
-            outRelay.terminate();
+        RelayButton myButton = new RelayButton(this, rSpec);
+        relays.add (myButton);
+        myButton.setOnClickListener(this);
 
-        if (inRelay != null)
-            inRelay.terminate();
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
+        ll.addView(myButton, lp);
 
-        outRelay = null;
-        inRelay = null;
     }
     /*
         Handler for the activity being destroyed. As it stands we basically shut down
@@ -102,7 +77,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onDestroy()
     {
-        cleanUp();
+        for (RelayButton rb: relays)
+        {
+            rb.cleanUp();
+        }
         super.onDestroy();
     }
 
