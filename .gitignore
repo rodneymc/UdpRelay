@@ -32,5 +32,6 @@ hs_err_pid*
 
 #Seems to recreate automatically so we can sod it off from git
 /.idea/misc.xml
-/.idea/cache
+/.idea/caches
+
 
