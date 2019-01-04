@@ -29,7 +29,9 @@ class Relay extends Thread
     private final DatagramSocket rxSocket;
     private final DatagramSocket txSocket;
     private final InetSocketAddress remoteTxAddr;
+    private volatile InetSocketAddress remoteRxAddr;
     private volatile boolean done;
+    private final Relay mirrorOf;
 
     public Relay(String inAddr, int inport, String outAddr, int outport, String outRemoteAddr, int outRemotePort) throws IOException
     {
@@ -39,33 +41,80 @@ class Relay extends Thread
         txSocket = outAddr == null ? new DatagramSocket() :
                 new DatagramSocket(new InetSocketAddress(outAddr, outport));
 
-        remoteTxAddr = outRemoteAddr == null ? null :
-                new InetSocketAddress(outRemoteAddr, outRemotePort);
+        if (outRemoteAddr == null || outRemotePort <= 0)
+        {
+            // This is the relay that will target the remote - find the server if you like, the
+            // address must be concrete.
+            throw new IllegalArgumentException("Remote output address for non-mirror (initiator) may not be ephermeral / unspecified");
+        }
+        remoteTxAddr = new InetSocketAddress(outRemoteAddr, outRemotePort);
+
+        mirrorOf = null; // This is not a mirror, but another relay may be a mirror of it.
     }
     /*
         For constructing relay based on an existing relay. The purpose of this is to relay
         in the opposite direction.
      */
+    public Relay(Relay mirror)
+    {
+        rxSocket = mirror.txSocket;
+        txSocket = mirror.rxSocket;
+        remoteTxAddr = null;
+        mirrorOf = mirror;
+    }
     public Relay(Relay mirror, String outRemoteAddr, int outRemotePort)
     {
         rxSocket = mirror.txSocket;
         txSocket = mirror.rxSocket;
-        remoteTxAddr = new InetSocketAddress(outRemoteAddr, outRemotePort);
+        // As we are a mirror, we CAN pass null for the remote addr, we get it from the relay
+        // we are mirroring once it is connected.
+        remoteTxAddr = outRemoteAddr == null ? null : new InetSocketAddress(outRemoteAddr, outRemotePort);
+        mirrorOf = mirror;
     }
+
+
     @Override
     public void run()
     {
         byte buf[] = new byte[1024 * 65];
+        InetSocketAddress remoteOutAddr;
+
+        /*
+            If we have no output address and we are a mirror, wait relay we are mirrring to connect,
+            so we can get it's receive address which is our tx address
+         */
+        if (remoteTxAddr == null && mirrorOf != null)
+        {
+            remoteOutAddr = mirrorOf.getRemoteRxAddress(); //waits for connect
+        }
+        else
+        {
+            remoteOutAddr = remoteTxAddr;
+        }
+
         DatagramPacket rxPacket = new DatagramPacket(buf, buf.length);
 
-        DatagramPacket txPacket = remoteTxAddr == null ? new DatagramPacket(buf, buf.length) :
-                new DatagramPacket(buf, buf.length, remoteTxAddr);
+        DatagramPacket txPacket = remoteOutAddr == null ? new DatagramPacket(buf, buf.length) :
+                new DatagramPacket(buf, buf.length, remoteOutAddr);
 
         while (!done)
         {
             try
             {
                 rxSocket.receive(rxPacket);
+
+                /*  Now we have received something, figure out the remote's address if we didn't
+                    know it. NB as we are the only setter of remoteTxAddr don't need to sync before
+                    testing it
+                 */
+                if (remoteRxAddr == null)
+                {
+                    synchronized (this)
+                    {
+                        remoteRxAddr = new InetSocketAddress(rxPacket.getAddress(), rxPacket.getPort());
+                        notify();
+                    }
+                }
                 txPacket.setLength(rxPacket.getLength());
                 txSocket.send(txPacket);
             }
@@ -81,6 +130,20 @@ class Relay extends Thread
             }
         }
     }
+
+    /*
+        Get the remote's address. If unknown WAITS UNTIL CONNECT
+     */
+    public synchronized InetSocketAddress getRemoteRxAddress()
+    {
+        while (remoteRxAddr == null)
+        {
+            try {wait();}
+            catch (InterruptedException e) {return null;}
+        }
+        return remoteRxAddr;
+    }
+
     /*
         Method which causes the thread to quickly run to completion. Closing the sockets
         will cause the thread to wake (with an excpetion) in the event that it is waiting
