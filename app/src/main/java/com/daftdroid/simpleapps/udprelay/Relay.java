@@ -42,6 +42,7 @@ class Relay
     private final byte buf2[] = new byte[512];
     private final ByteBuffer serverToClientBuf = ByteBuffer.wrap(buf2);
     private final Selector selector;
+    private boolean started;
 
     private SelectionKey serverReadKey, clientReadKey, clientWriteKey, serverWriteKey;
 
@@ -166,6 +167,16 @@ class Relay
         // In all cases, we don't want the same event twice
         key.cancel();
 
+    }
+
+    public void start()
+    {
+        if (started)
+            throw new IllegalStateException ("Already started");
+
+        started = true;
+        readRegisterClient();
+        readRegisterServer();
     }
 
 }
