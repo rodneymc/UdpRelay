@@ -21,138 +21,151 @@ package com.daftdroid.simpleapps.udprelay;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
-class Relay extends Thread
+class Relay
 {
-    private final DatagramSocket rxSocket;
-    private final DatagramSocket txSocket;
-    private final InetSocketAddress remoteTxAddr;
-    private volatile InetSocketAddress remoteRxAddr;
-    private volatile boolean done;
-    private final Relay mirrorOf;
+    private final DatagramChannel clientChannel;
+    private final DatagramChannel serverChannel;
+    private SocketAddress inLocalAddress;   // Our IP for talking to the client
+    private SocketAddress inRemoteAddress;  // The client's IP
+    private SocketAddress outLocalAddress; // Our IP for talking to the server
+    private SocketAddress outRemoteAddress; // The server's IP
+    private final byte buf1[] = new byte[512];
+    private final ByteBuffer clientToServerBuf = ByteBuffer.wrap(buf1);
+    private final byte buf2[] = new byte[512];
+    private final ByteBuffer serverToClientBuf = ByteBuffer.wrap(buf2);
+    private final Selector selector;
 
-    public Relay(String inAddr, int inport, String outAddr, int outport, String outRemoteAddr, int outRemotePort) throws IOException
-    {
-        rxSocket = inAddr == null ? new DatagramSocket() :
-                new DatagramSocket(new InetSocketAddress(inAddr, inport));
+    private SelectionKey serverReadKey, clientReadKey, clientWriteKey, serverWriteKey;
 
-        txSocket = outAddr == null ? new DatagramSocket() :
-                new DatagramSocket(new InetSocketAddress(outAddr, outport));
+    public Relay(RelaySpec spec, Selector sel) throws IOException {
+        clientChannel = DatagramChannel.open();
+        clientChannel.configureBlocking(false);
+        serverChannel = DatagramChannel.open();
+        serverChannel.configureBlocking(false);
 
-        if (outRemoteAddr == null || outRemotePort <= 0)
-        {
-            // This is the relay that will target the remote - find the server if you like, the
-            // address must be concrete.
-            throw new IllegalArgumentException("Remote output address for non-mirror (initiator) may not be ephermeral / unspecified");
-        }
-        remoteTxAddr = new InetSocketAddress(outRemoteAddr, outRemotePort);
-
-        mirrorOf = null; // This is not a mirror, but another relay may be a mirror of it.
-    }
-    /*
-        For constructing relay based on an existing relay. The purpose of this is to relay
-        in the opposite direction.
-     */
-    public Relay(Relay mirror)
-    {
-        rxSocket = mirror.txSocket;
-        txSocket = mirror.rxSocket;
-        remoteTxAddr = null;
-        mirrorOf = mirror;
-    }
-    public Relay(Relay mirror, String outRemoteAddr, int outRemotePort)
-    {
-        rxSocket = mirror.txSocket;
-        txSocket = mirror.rxSocket;
-        // As we are a mirror, we CAN pass null for the remote addr, we get it from the relay
-        // we are mirroring once it is connected.
-        remoteTxAddr = outRemoteAddr == null ? null : new InetSocketAddress(outRemoteAddr, outRemotePort);
-        mirrorOf = mirror;
-    }
-
-
-    @Override
-    public void run()
-    {
-        byte buf[] = new byte[1024 * 65];
-        InetSocketAddress remoteOutAddr;
+        selector = sel;
 
         /*
-            If we have no output address and we are a mirror, wait relay we are mirrring to connect,
-            so we can get it's receive address which is our tx address
+            Note that as this is UDP, the definition of client and server are somewhat arbitary,
+            however, for both the "client" link and the "server" link, at least one end of the
+            link needs a well-specified address.
          */
-        if (remoteTxAddr == null && mirrorOf != null)
+
+        if (spec.getClientIP() == null && spec.getAndroidLocalIP() == null
+                || spec.getAndroidPublicIP() == null && spec.getServerIP() == null) {
+            throw new IllegalArgumentException("At least one end of the link must be well known");
+        }
+
+        if (spec.getAndroidLocalIP() != null) {
+            inLocalAddress = new InetSocketAddress(spec.getAndroidLocalIP(), spec.getAndroidLocalPort());
+            clientChannel.socket().bind(inLocalAddress);
+        }
+        if (spec.getClientIP() != null) {
+            inRemoteAddress = new InetSocketAddress(spec.getClientIP(), spec.getClientPort());
+            clientChannel.socket().connect(inRemoteAddress);
+        }
+        if (spec.getAndroidPublicIP() != null) {
+            outLocalAddress = new InetSocketAddress(spec.getAndroidPublicIP(), spec.getAndroidPublicPort());
+            serverChannel.socket().bind(outLocalAddress);
+        }
+        if (spec.getServerIP() != null) {
+            outRemoteAddress = new InetSocketAddress(spec.getServerIP(), spec.getServerPort());
+            serverChannel.socket().connect(outRemoteAddress);
+        }
+    }
+
+    private void readRegisterClient()
+    {
+        try {
+            clientReadKey = clientChannel.register(selector, SelectionKey.OP_READ);
+            clientReadKey.attach(this);
+        }
+        catch (ClosedChannelException e)
         {
-            remoteOutAddr = mirrorOf.getRemoteRxAddress(); //waits for connect
+            throw new IllegalStateException (e);
+        }
+    }
+
+    private void writeRegisterClient()
+    {
+        try {
+            clientWriteKey = clientChannel.register(selector, SelectionKey.OP_WRITE);
+            clientWriteKey.attach(this);
+        }
+        catch (ClosedChannelException e)
+        {
+            throw new IllegalStateException (e);
+        }
+    }
+
+    private void readRegisterServer()
+    {
+        try {
+            serverReadKey = serverChannel.register(selector, SelectionKey.OP_READ);
+            serverReadKey.attach(this);
+        }
+        catch (ClosedChannelException e)
+        {
+            throw new IllegalStateException (e);
+        }
+    }
+
+    private void writeRegisterServer()
+    {
+        try {
+            serverWriteKey = serverChannel.register(selector, SelectionKey.OP_WRITE);
+            serverWriteKey.attach(this);
+        }
+        catch (ClosedChannelException e)
+        {
+            throw new IllegalStateException (e);
+        }
+    }
+
+    public void select(SelectionKey key) throws IOException
+    {
+        if (key == clientReadKey)
+        {
+            // Write the data received from the client out to the server
+            serverChannel.write(clientToServerBuf);
+
+            // Now wait for that write to complete, before we can reuse this byte buffer
+            writeRegisterServer();
+        }
+        else if (key == serverWriteKey)
+        {
+            // server Channel write has completed, we can accept another packet from the client
+            readRegisterClient();
+        }
+        else if (key == serverReadKey)
+        {
+            // Write the data received from the server out to the client
+            clientChannel.write(serverToClientBuf);
+
+            // Now wait for that write to complete, before we can reuse this byte buffer
+            writeRegisterClient();
+        }
+        else if (key == clientWriteKey)
+        {
+            // client channel write has completed, we can accept nother packet from the server
+            readRegisterServer();
         }
         else
         {
-            remoteOutAddr = remoteTxAddr;
+            throw new IllegalStateException("Unexpected key" + key.toString());
         }
 
-        DatagramPacket rxPacket = new DatagramPacket(buf, buf.length);
+        // In all cases, we don't want the same event twice
+        key.cancel();
 
-        DatagramPacket txPacket = remoteOutAddr == null ? new DatagramPacket(buf, buf.length) :
-                new DatagramPacket(buf, buf.length, remoteOutAddr);
-
-        while (!done)
-        {
-            try
-            {
-                rxSocket.receive(rxPacket);
-
-                /*  Now we have received something, figure out the remote's address if we didn't
-                    know it. NB as we are the only setter of remoteTxAddr don't need to sync before
-                    testing it
-                 */
-                if (remoteRxAddr == null)
-                {
-                    synchronized (this)
-                    {
-                        remoteRxAddr = new InetSocketAddress(rxPacket.getAddress(), rxPacket.getPort());
-                        notify();
-                    }
-                }
-                txPacket.setLength(rxPacket.getLength());
-                txSocket.send(txPacket);
-            }
-            catch (IOException e)
-            {
-                if (!done) {
-                    // TODO log error!
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e2) {
-                    }
-                }
-            }
-        }
     }
 
-    /*
-        Get the remote's address. If unknown WAITS UNTIL CONNECT
-     */
-    public synchronized InetSocketAddress getRemoteRxAddress()
-    {
-        while (remoteRxAddr == null)
-        {
-            try {wait();}
-            catch (InterruptedException e) {return null;}
-        }
-        return remoteRxAddr;
-    }
-
-    /*
-        Method which causes the thread to quickly run to completion. Closing the sockets
-        will cause the thread to wake (with an excpetion) in the event that it is waiting
-        on send() or, more likely receive().
-     */
-    public void terminate()
-    {
-        done = true;
-        rxSocket.close();
-        txSocket.close();
-    }
 }
