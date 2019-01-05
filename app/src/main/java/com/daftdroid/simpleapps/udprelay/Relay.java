@@ -31,28 +31,29 @@ import java.nio.channels.Selector;
 class Relay
 {
     private static final int MAX_PACKET_SIZE = 64*1024;
-    private final DatagramChannel channelA;
-    private final DatagramChannel channelB;
-    private SocketAddress chanALocalAddress;   // Our IP on chan A (eg our Wifi connection)
-    private SocketAddress chanARemoteAddress;  // The remote IP on chan A (eg the "client" IP)
-    private SocketAddress chanBLocalAddress; // Our IP on chan B (eg our GSM connection)
-    private SocketAddress chanBRemoteAddress; // The remote IP on chan B (eg a server)
-    private final byte buf1[] = new byte[MAX_PACKET_SIZE];
-    private final ByteBuffer bufferAtoB = ByteBuffer.wrap(buf1);
-    private final byte buf2[] = new byte[MAX_PACKET_SIZE];
-    private final ByteBuffer bufferBtoA = ByteBuffer.wrap(buf2);
     private final Selector selector;
     private final RelaySpec spec;
     private boolean started;
     private volatile boolean stopping;
 
-    private SelectionKey selectKeyA, selectKeyB;
+    private class RelayChannel
+    {
+        DatagramChannel channel;
+        SocketAddress localAddress;
+        SocketAddress remoteAddress;
+        SelectionKey selectKey;
+        final byte buf[] = new byte[MAX_PACKET_SIZE];
+        final ByteBuffer buffer = ByteBuffer.wrap(buf);
+    }
+
+    private final RelayChannel channelA = new RelayChannel();
+    private final RelayChannel channelB = new RelayChannel();
 
     public Relay(RelaySpec spec, Selector sel) throws IOException {
-        channelA = DatagramChannel.open();
-        channelA.configureBlocking(false);
-        channelB = DatagramChannel.open();
-        channelB.configureBlocking(false);
+        channelA.channel = DatagramChannel.open();
+        channelA.channel.configureBlocking(false);
+        channelB.channel = DatagramChannel.open();
+        channelB.channel.configureBlocking(false);
 
         selector = sel;
         this.spec = spec;
@@ -77,138 +78,98 @@ class Relay
     public void initialize() throws IOException
     {
         if (spec.getChanALocalIP() != null) {
-            chanALocalAddress = new InetSocketAddress(spec.getChanALocalIP(), spec.getChanALocalPort());
-            channelA.socket().bind(chanALocalAddress);
+            channelA.localAddress = new InetSocketAddress(spec.getChanALocalIP(), spec.getChanALocalPort());
+            channelA.channel.socket().bind(channelA.localAddress);
         }
         if (spec.getChanARemoteIP() != null) {
-            chanARemoteAddress = new InetSocketAddress(spec.getChanARemoteIP(), spec.getChanARemotePort());
-            channelA.socket().connect(chanARemoteAddress);
-            chanARegisterFor(SelectionKey.OP_READ);
-        }
-        else
-        {
-            // Remote address unknown, register for incoming connection
-            chanARegisterFor(SelectionKey.OP_READ);
+            channelA.remoteAddress = new InetSocketAddress(spec.getChanARemoteIP(), spec.getChanARemotePort());
+            channelA.channel.socket().connect(channelA.remoteAddress);
         }
         if (spec.getChanBLocalIP() != null) {
-            chanBLocalAddress = new InetSocketAddress(spec.getChanBLocalIP(), spec.getChanBLocalPort());
-            channelB.socket().bind(chanBLocalAddress);
+            channelB.localAddress = new InetSocketAddress(spec.getChanBLocalIP(), spec.getChanBLocalPort());
+            channelB.channel.socket().bind(channelB.localAddress);
         }
         if (spec.getChanBRemoteIP() != null) {
-            chanBRemoteAddress = new InetSocketAddress(spec.getChanBRemoteIP(), spec.getChanBRemotePort());
-            channelB.socket().connect(chanBRemoteAddress);
-            chanBRegisterFor(SelectionKey.OP_READ);
-        }
-        else
-        {
-            // Remote address unknown, wait for incoming connection
-            chanBRegisterFor(SelectionKey.OP_READ);
-
+            channelB.remoteAddress = new InetSocketAddress(spec.getChanBRemoteIP(), spec.getChanBRemotePort());
+            channelB.channel.socket().connect(channelB.remoteAddress);
         }
 
-    }
-    private void chanARegisterFor(int op)
-    {
-        try {
-            selectKeyA = channelA.register(selector, op);
-            selectKeyA.attach(this);
-        }
-        catch (ClosedChannelException e)
-        {
-            throw new IllegalStateException (e);
-        }
-    }
+        // Start off with them both ready to receive
+        channelA.selectKey = channelA.channel.register(selector, SelectionKey.OP_READ);
+        channelB.selectKey = channelB.channel.register(selector, SelectionKey.OP_READ);
+        channelA.selectKey.attach(this);
+        channelB.selectKey.attach(this);
 
-    private void chanBRegisterFor(int op)
-    {
-        try {
-            selectKeyB = channelB.register(selector, op);
-            selectKeyB.attach(this);
-        }
-        catch (ClosedChannelException e)
-        {
-            throw new IllegalStateException (e);
-        }
+
     }
 
     public void select(SelectionKey key) throws IOException
     {
-        int op = key.readyOps() & key.interestOps();
+        if (stopping)
+            return;
+        
+        int interestOps = key.interestOps();
+        int op = key.readyOps() & interestOps;
 
-        if (key == selectKeyA)
+        if (key == channelA.selectKey)
         {
-            if ((op & SelectionKey.OP_READ) != 0)
-            {
-                // Write the data received from channel A to channel B
-                bufferAtoB.clear();
-                SocketAddress remote = channelA.receive(bufferAtoB);
-
-                // Now if we have not yet determined the remote address we get it from here
-                if (chanARemoteAddress == null)
-                {
-                    chanARemoteAddress = remote;
-                    channelA.connect(remote);
-                }
-                // else compare that they match ? TODO
-
-                bufferAtoB.limit(bufferAtoB.position());
-                bufferAtoB.rewind();
-                channelB.write(bufferAtoB);
-
-                // Now wait for that write to complete, before we can reuse this byte buffer
-                chanBRegisterFor(SelectionKey.OP_WRITE);
-            }
-
-            //  Write operation is NOT mutually exclusive with the above two, it is mutually
-            // exclusive with reading from the other channel
-
-            if ((op & SelectionKey.OP_WRITE) != 0)
-            {
-                // B Write has finished, so A buffer is ready for use again
-                chanARegisterFor(SelectionKey.OP_READ);
-            }
+            select(channelA, channelB);
         }
-        else if (key == selectKeyB)
+        else if (key == channelB.selectKey)
         {
-            if ((op & SelectionKey.OP_READ) != 0) // should be mutually exclusive with connect
-            {
-                // Write the data received from channel B to channel A
-                bufferBtoA.clear();
-                SocketAddress remote = channelB.receive(bufferBtoA);
-
-                // Now if we have not yet determined the remote address we get it from here
-                if (chanBRemoteAddress == null)
-                {
-                    chanBRemoteAddress = remote;
-                    channelB.connect(remote);
-                }
-                // else compare that they match ? TODO
-
-
-                bufferBtoA.limit(bufferBtoA.position());
-                bufferBtoA.rewind();
-                channelA.write(bufferBtoA);
-
-                // Now wait for that write to complete, before we can reuse this byte buffer
-                chanARegisterFor(SelectionKey.OP_WRITE);
-            }
-
-            //  Write operation is NOT mutually exclusive with the above two, it is mutually
-            // exclusive with reading from the other channel
-
-            if ((op & SelectionKey.OP_WRITE) != 0)
-            {
-                // A Write has finished, so B buffer is ready for use again
-                chanBRegisterFor(SelectionKey.OP_READ);
-            }
+            select(channelB, channelA);
         }
         else
         {
             throw new IllegalStateException("Unexpected key" + key.toString());
         }
+    }
 
-        // In all cases, we don't want the same event twice
-        key.cancel();
+    private void select(RelayChannel selectedChannel, RelayChannel otherChannel) throws IOException
+    {
+        SelectionKey key = selectedChannel.selectKey;
+
+        int interestOps = key.interestOps();
+        int op = key.readyOps() & interestOps;
+
+        if ((op & SelectionKey.OP_READ) != 0)
+        {
+            ByteBuffer buffer = selectedChannel.buffer;
+
+            // Write the data received to the other channel
+            buffer.clear();
+            SocketAddress remote = selectedChannel.channel.receive(buffer);
+
+            // Now if we have not yet determined the remote address we get it from here
+            if (selectedChannel.remoteAddress == null)
+            {
+                selectedChannel.remoteAddress = remote;
+                selectedChannel.channel.connect(remote);
+            }
+            // else compare that they match ? TODO
+
+            buffer.limit(buffer.position());
+            buffer.rewind();
+            otherChannel.channel.write(buffer);
+
+            // Now wait for that write to complete, before we can reuse this byte buffer.
+            // Clear read interest for this channel, and set write interest for the other.
+            interestOps &= ~ SelectionKey.OP_READ;
+            key.interestOps(interestOps);
+
+            SelectionKey otherKey = otherChannel.selectKey;
+            otherKey.interestOps(SelectionKey.OP_WRITE | otherKey.interestOps());
+        }
+
+        //  Write operation is NOT mutually exclusive with the above two, it is mutually
+        // exclusive with reading from the other channel
+
+        if ((op & SelectionKey.OP_WRITE) != 0)
+        {
+            // After write has finished, the other channel's buffer is ready for use again
+            SelectionKey otherKey = otherChannel.selectKey;
+            otherKey.interestOps(SelectionKey.OP_READ | otherKey.interestOps());
+        }
     }
 
     public void startRelay()
@@ -227,8 +188,8 @@ class Relay
     public void stopRelay()
     {
         stopping = true;
-        try {channelA.close();} catch (IOException e) {}
-        try {channelB.close();} catch (IOException e) {}
+        try {channelA.channel.close();} catch (IOException e) {}
+        try {channelB.channel.close();} catch (IOException e) {}
     }
 
 }
