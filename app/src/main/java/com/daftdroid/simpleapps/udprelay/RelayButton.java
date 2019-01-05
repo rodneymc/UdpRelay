@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class RelayButton extends AppCompatButton {
 
-    private Relay inRelay, outRelay;
+    private Relay relay;
     private final RelaySpec spec;
 
     public RelayButton(Context c, RelaySpec spec)
@@ -22,44 +22,27 @@ public class RelayButton extends AppCompatButton {
     public void click()
     {
         try {
-            if (outRelay == null) {
-                outRelay = new Relay(spec.getAndroidLocalIP(), spec.getAndroidLocalPort(),
-                        spec.getAndroidPublicIP(), spec.getAndroidPublicPort(),
-                        spec.getServerIP(), spec.getServerPort());
-                inRelay = new Relay(outRelay, spec.getClientIP(), spec.getClientPort());
-                inRelay.setName("In relay");
-                inRelay.start();
-                outRelay.setName("Out relay");
-                outRelay.start();
-                setText("stop");
-            } else {
+
+            if (relay == null) {
+                relay = new Relay(spec, NetworkThread.getNetworkThread().selector());
+            }
+            else {
                 cleanUp();
-                setText("start");
+                setText(spec.getName());
             }
         } catch (IOException e)
         {
-            e.printStackTrace();
+            setText(e.getLocalizedMessage()); // TODO
             cleanUp();
-            setText(e.getLocalizedMessage());
         }
     }
 
     /*
-    Cleanup function terminates the threads and nulls the references to them.
-    Nulling the refs allows GC, also a null reference is used to indicate that
-    we are not currently running.
- */
+        //TODO
+     */
     public void cleanUp()
     {
-        if (outRelay != null)
-            outRelay.terminate();
-
-        if (inRelay != null)
-            inRelay.terminate();
-
-        outRelay = null;
-        inRelay = null;
-
+        relay = null;
     }
 
 }
