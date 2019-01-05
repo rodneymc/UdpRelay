@@ -4,12 +4,16 @@ import java.io.IOException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class NetworkThread extends Thread {
 
     private static final NetworkThread singleton;
     private volatile boolean done;
+    private List<Relay> registeredRelays = new ArrayList<Relay>();
+    private List<Relay> relaysToRegister = new ArrayList<Relay>();
 
     static
     {
@@ -59,6 +63,38 @@ public class NetworkThread extends Thread {
                     }
                 }
 
+                // See if any new relays have appeared
+
+                List<Relay> newRelays = null;
+
+                synchronized (this)
+                {
+                    // Add all the new relays into the registeredRelays list, and create
+                    // a new blank list of relays to register, however keep a reference to the
+                    // old one (newRelays) - these are to be initialized outside the syncrhonized block)
+
+                    if (relaysToRegister.size() > 0)
+                    {
+                        newRelays = relaysToRegister;
+                        for (Relay r: newRelays)
+                        {
+                            if (!registeredRelays.contains(r)) {
+                                registeredRelays.add(r);
+                            }
+                        }
+
+                        relaysToRegister = new ArrayList<Relay>(1);
+                    }
+                }
+
+                if (newRelays != null)
+                {
+                    for (Relay r: newRelays)
+                    {
+                        r.initialize();
+                    }
+                }
+
             } catch (IOException e) {
                 throw new IllegalStateException("IOException here is a TODO", e); // TODO
             }
@@ -71,5 +107,11 @@ public class NetworkThread extends Thread {
         interrupt();
         try {selector.close();}
         catch (IOException e) {}
+    }
+
+    public synchronized void addRelay(Relay relay)
+    {
+        relaysToRegister.add(relay);
+        selector.wakeup();
     }
 }

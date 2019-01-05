@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             addRelay(rs);
         }
+
+        NetworkThread.getNetworkThread().start();
     }
     @Override
     public void onClick(View v) {
@@ -66,22 +68,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
         ll.addView(myButton, lp);
 
-    }
-    /*
-        Handler for the activity being destroyed. As it stands we basically shut down
-        however in a better version of this code the app would behave as a "service" in the
-        sense that it would continue to relay traffic even when the activity is destroyed.
-        As it stands, this would leak since destroying the activity removes the references to
-        our threads. TODO implement service
-     */
-    @Override
-    public void onDestroy()
-    {
-        for (RelayButton rb: relays)
-        {
-            rb.cleanUp();
-        }
-        super.onDestroy();
     }
 
 }

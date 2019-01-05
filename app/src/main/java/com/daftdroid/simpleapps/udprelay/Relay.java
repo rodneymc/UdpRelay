@@ -42,7 +42,9 @@ class Relay
     private final byte buf2[] = new byte[MAX_PACKET_SIZE];
     private final ByteBuffer bufferBtoA = ByteBuffer.wrap(buf2);
     private final Selector selector;
+    private final RelaySpec spec;
     private boolean started;
+    private volatile boolean stopping;
 
     private SelectionKey readKeyA, readKeyB, writeKeyA, writeKeyB;
 
@@ -53,6 +55,7 @@ class Relay
         channelB.configureBlocking(false);
 
         selector = sel;
+        this.spec = spec;
 
         /*
             Note that as this is UDP, the definition of client and server are somewhat arbitary,
@@ -65,6 +68,14 @@ class Relay
             throw new IllegalArgumentException("At least one end of the link must be well known");
         }
 
+    }
+
+    /*
+        Must not be called in the UI thread!
+     */
+
+    public void initialize() throws IOException
+    {
         if (spec.getChanALocalIP() != null) {
             chanALocalAddress = new InetSocketAddress(spec.getChanALocalIP(), spec.getChanALocalPort());
             channelA.socket().bind(chanALocalAddress);
@@ -81,8 +92,11 @@ class Relay
             chanBRemoteAddress = new InetSocketAddress(spec.getChanBRemoteIP(), spec.getChanBRemotePort());
             channelB.socket().connect(chanBRemoteAddress);
         }
-    }
 
+        chanARegisterForRead();
+        chanBRegisterForRead();
+
+    }
     private void chanARegisterForRead()
     {
         try {
@@ -168,14 +182,24 @@ class Relay
         key.cancel();
     }
 
-    public void start()
+    public void startRelay()
     {
+        stopping = false;
+        // Register ourself with the network thread, this will call initialize for us
+
+        NetworkThread.getNetworkThread().addRelay(this);
+
         if (started)
             throw new IllegalStateException ("Already started");
 
         started = true;
-        chanARegisterForRead();
-        chanBRegisterForRead();
+    }
+
+    public void stopRelay()
+    {
+        stopping = true;
+        try {channelA.close();} catch (IOException e) {}
+        try {channelB.close();} catch (IOException e) {}
     }
 
 }
