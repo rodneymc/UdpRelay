@@ -12,43 +12,43 @@ public class RelaySpec {
      */
 
     private final String name;
-    private final String android_local_ip;
-    private final int android_local_port;
-    private final String android_public_ip;
-    private final int android_public_port;
-    private final String server_ip;
-    private final int server_port;
-    private final String client_ip;
-    private final int client_port;
+    private final String chanAlocalIP;
+    private final int chanAlocalPort;
+    private final String chanBlocalIP;
+    private final int chanBlocalPort;
+    private final String chanBremoteIP;
+    private final int chanBremotePort;
+    private final String chanAremoteIP;
+    private final int chanAremotePort;
 
     /* Getters */
     public String getName() {return name;}
-    public String getAndroidLocalIP() {return android_local_ip;}
-    public int getAndroidLocalPort() {return android_local_port;}
-    public String getAndroidPublicIP() {return android_public_ip;}
-    public int getAndroidPublicPort() {return android_public_port;}
-    public String getServerIP() {return server_ip;}
-    public int getServerPort() {return server_port;}
-    public String getClientIP() {return client_ip;}
-    public int getClientPort() {return client_port;}
+    public String getChanALocalIP() {return chanAlocalIP;}
+    public int getChanALocalPort() {return chanAlocalPort;}
+    public String getChanBLocalIP() {return chanBlocalIP;}
+    public int getChanBLocalPort() {return chanBlocalPort;}
+    public String getServerIP() {return chanBremoteIP;}
+    public int getServerPort() {return chanBremotePort;}
+    public String getClientIP() {return chanAremoteIP;}
+    public int getClientPort() {return chanAremotePort;}
 
     /*
         Constructor which takes all of the parameters to full specify the
         relay
      */
-    public RelaySpec(String name, String android_local_ip, int android_local_port,
-                     String android_public_ip, int android_public_port,
-                     String server_ip, int server_port,
-                     String client_ip, int client_port) {
+    public RelaySpec(String name, String chanAlocalIP, int chanAlocalPort,
+                     String chanBlocalIP, int chanBlocalPort,
+                     String chanBremoteIP, int chanBremotePort,
+                     String chanAremoteIP, int chanAremotePort) {
         this.name = name;
-        this.android_local_ip = android_local_ip;
-        this.android_local_port = android_local_port;
-        this.android_public_ip = android_public_ip;
-        this.android_public_port = android_public_port;
-        this.server_ip = server_ip;
-        this.server_port = server_port;
-        this.client_ip = client_ip;
-        this.client_port = client_port;
+        this.chanAlocalIP = chanAlocalIP;
+        this.chanAlocalPort = chanAlocalPort;
+        this.chanBlocalIP = chanBlocalIP;
+        this.chanBlocalPort = chanBlocalPort;
+        this.chanBremoteIP = chanBremoteIP;
+        this.chanBremotePort = chanBremotePort;
+        this.chanAremoteIP = chanAremoteIP;
+        this.chanAremotePort = chanAremotePort;
     }
 
     /*
@@ -58,12 +58,12 @@ public class RelaySpec {
         of TLS (tls-server / tls-client in the config files). Non-TLS UDP connections are peer-to-peer
         and do not support multiple "clients".
      */
-    public RelaySpec(String name, String android_local_ip, int android_local_port,
-                     String server_ip, int server_port)
+    public RelaySpec(String name, String chanAlocalIP, int chanAlocalPort,
+                     String chanBremoteIP, int chanBremotePort)
     {
-        this (name, android_local_ip, android_local_port,
+        this (name, chanAlocalIP, chanAlocalPort,
                 EPHEMERAL_IP, EPHEMERAL_PORT,
-                server_ip, server_port,
+                chanBremoteIP, chanBremotePort,
                 EPHEMERAL_IP, EPHEMERAL_PORT);
     }
 
@@ -72,10 +72,10 @@ public class RelaySpec {
         regarding TLS) - and both the server and the local replication of the server
         will listen on a well known port for OpenVPN
      */
-    public RelaySpec (String name, String android_local_ip, String server_ip)
+    public RelaySpec (String name, String chanAlocalIP, String chanBremoteIP)
     {
-        this (name, android_local_ip, WELL_KNOWN_PORT,
-                server_ip, WELL_KNOWN_PORT);
+        this (name, chanAlocalIP, WELL_KNOWN_PORT,
+                chanBremoteIP, WELL_KNOWN_PORT);
     }
 
     /*
@@ -91,7 +91,7 @@ public class RelaySpec {
         new RelaySpec("demo 2", "192.168.42.129",
                 1195, "203.0.113.10", 1196),
 
-        // Example where we specify everything, note that the parameter android_public_ip is
+        // Example where we specify everything, note that the parameter chanBlocalIP is
         // very unlikely to be anything other than RelaySpec.EPHEMERAL_IP, unless you are
         // specifying a particular gateway - if so you need to know its IP at runtime.
 
