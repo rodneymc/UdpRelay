@@ -11,7 +11,6 @@ public class RelayButton extends AppCompatButton {
 
     private Relay relay;
     private final RelaySpec spec;
-    private boolean running;
 
     public RelayButton(Context c, RelaySpec spec)
     {
@@ -24,19 +23,15 @@ public class RelayButton extends AppCompatButton {
     {
         try {
 
-            if (!running) {
-                if (relay == null) {
-                    relay = new Relay(spec, NetworkThread.getNetworkThread().selector());
-                }
-
+            if (relay == null) {
+                relay = new Relay(spec, NetworkThread.getNetworkThread().selector());
                 relay.startRelay();
                 setText(spec.getName()+ " [RUNNING]");
-                running = true;
             }
             else {
                 relay.stopRelay();
+                relay = null;
                 setText(spec.getName());
-                running = false;
             }
         } catch (IOException e)
         {

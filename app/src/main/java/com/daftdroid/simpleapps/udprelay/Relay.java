@@ -150,6 +150,10 @@ class Relay
         if (key == readKeyA)
         {
             // Write the data received from channel A to channel B
+            bufferAtoB.clear();
+            channelA.read(bufferAtoB);
+            bufferAtoB.limit(bufferAtoB.position());
+            bufferAtoB.rewind();
             channelB.write(bufferAtoB);
 
             // Now wait for that write to complete, before we can reuse this byte buffer
@@ -163,6 +167,10 @@ class Relay
         else if (key == readKeyB)
         {
             // Write the data received from channel B out to channel A
+            bufferBtoA.clear();
+            channelB.read(bufferBtoA);
+            bufferBtoA.limit(bufferBtoA.position());
+            bufferBtoA.rewind();
             channelA.write(bufferBtoA);
 
             // Now wait for that write to complete, before we can reuse this byte buffer
