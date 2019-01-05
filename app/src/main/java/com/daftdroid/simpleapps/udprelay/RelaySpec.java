@@ -27,10 +27,10 @@ public class RelaySpec {
     public int getChanALocalPort() {return chanAlocalPort;}
     public String getChanBLocalIP() {return chanBlocalIP;}
     public int getChanBLocalPort() {return chanBlocalPort;}
-    public String getServerIP() {return chanBremoteIP;}
-    public int getServerPort() {return chanBremotePort;}
-    public String getClientIP() {return chanAremoteIP;}
-    public int getClientPort() {return chanAremotePort;}
+    public String getChanBRemoteIP() {return chanBremoteIP;}
+    public int getChanBRemotePort() {return chanBremotePort;}
+    public String getChanARemoteIP() {return chanAremoteIP;}
+    public int getChanARemotePort() {return chanAremotePort;}
 
     /*
         Constructor which takes all of the parameters to full specify the

@@ -31,8 +31,8 @@ import java.nio.channels.Selector;
 class Relay
 {
     private static final int MAX_PACKET_SIZE = 64*1024;
-    private final DatagramChannel clientChannel;
-    private final DatagramChannel serverChannel;
+    private final DatagramChannel channelA;
+    private final DatagramChannel channelB;
     private SocketAddress chanALocalAddress;   // Our IP on chan A (eg our Wifi connection)
     private SocketAddress chanARemoteAddress;  // The remote IP on chan A (eg the "client" IP)
     private SocketAddress chanBLocalAddress; // Our IP on chan B (eg our GSM connection)
@@ -47,10 +47,10 @@ class Relay
     private SelectionKey readKeyA, readKeyB, writeKeyA, writeKeyB;
 
     public Relay(RelaySpec spec, Selector sel) throws IOException {
-        clientChannel = DatagramChannel.open();
-        clientChannel.configureBlocking(false);
-        serverChannel = DatagramChannel.open();
-        serverChannel.configureBlocking(false);
+        channelA = DatagramChannel.open();
+        channelA.configureBlocking(false);
+        channelB = DatagramChannel.open();
+        channelB.configureBlocking(false);
 
         selector = sel;
 
@@ -60,33 +60,33 @@ class Relay
             link needs a well-specified address.
          */
 
-        if (spec.getClientIP() == null && spec.getChanALocalIP() == null
-                || spec.getChanBLocalIP() == null && spec.getServerIP() == null) {
+        if (spec.getChanARemoteIP() == null && spec.getChanALocalIP() == null
+                || spec.getChanBLocalIP() == null && spec.getChanBRemoteIP() == null) {
             throw new IllegalArgumentException("At least one end of the link must be well known");
         }
 
         if (spec.getChanALocalIP() != null) {
             chanALocalAddress = new InetSocketAddress(spec.getChanALocalIP(), spec.getChanALocalPort());
-            clientChannel.socket().bind(chanALocalAddress);
+            channelA.socket().bind(chanALocalAddress);
         }
-        if (spec.getClientIP() != null) {
-            chanARemoteAddress = new InetSocketAddress(spec.getClientIP(), spec.getClientPort());
-            clientChannel.socket().connect(chanARemoteAddress);
+        if (spec.getChanARemoteIP() != null) {
+            chanARemoteAddress = new InetSocketAddress(spec.getChanARemoteIP(), spec.getChanARemotePort());
+            channelA.socket().connect(chanARemoteAddress);
         }
         if (spec.getChanBLocalIP() != null) {
             chanBLocalAddress = new InetSocketAddress(spec.getChanBLocalIP(), spec.getChanBLocalPort());
-            serverChannel.socket().bind(chanBLocalAddress);
+            channelB.socket().bind(chanBLocalAddress);
         }
-        if (spec.getServerIP() != null) {
-            chanBRemoteAddress = new InetSocketAddress(spec.getServerIP(), spec.getServerPort());
-            serverChannel.socket().connect(chanBRemoteAddress);
+        if (spec.getChanBRemoteIP() != null) {
+            chanBRemoteAddress = new InetSocketAddress(spec.getChanBRemoteIP(), spec.getChanBRemotePort());
+            channelB.socket().connect(chanBRemoteAddress);
         }
     }
 
-    private void readRegisterClient()
+    private void chanARegisterForRead()
     {
         try {
-            readKeyA = clientChannel.register(selector, SelectionKey.OP_READ);
+            readKeyA = channelA.register(selector, SelectionKey.OP_READ);
             readKeyA.attach(this);
         }
         catch (ClosedChannelException e)
@@ -95,10 +95,10 @@ class Relay
         }
     }
 
-    private void writeRegisterClient()
+    private void chanARegisterForWrite()
     {
         try {
-            writeKeyA = clientChannel.register(selector, SelectionKey.OP_WRITE);
+            writeKeyA = channelA.register(selector, SelectionKey.OP_WRITE);
             writeKeyA.attach(this);
         }
         catch (ClosedChannelException e)
@@ -107,10 +107,10 @@ class Relay
         }
     }
 
-    private void readRegisterServer()
+    private void chanBRegisterForRead()
     {
         try {
-            readKeyB = serverChannel.register(selector, SelectionKey.OP_READ);
+            readKeyB = channelB.register(selector, SelectionKey.OP_READ);
             readKeyB.attach(this);
         }
         catch (ClosedChannelException e)
@@ -119,10 +119,10 @@ class Relay
         }
     }
 
-    private void writeRegisterServer()
+    private void chanBRegisterForWrite()
     {
         try {
-            writeKeyB = serverChannel.register(selector, SelectionKey.OP_WRITE);
+            writeKeyB = channelB.register(selector, SelectionKey.OP_WRITE);
             writeKeyB.attach(this);
         }
         catch (ClosedChannelException e)
@@ -135,29 +135,29 @@ class Relay
     {
         if (key == readKeyA)
         {
-            // Write the data received from the client out to the server
-            serverChannel.write(bufferAtoB);
+            // Write the data received from channel A to channel B
+            channelB.write(bufferAtoB);
 
             // Now wait for that write to complete, before we can reuse this byte buffer
-            writeRegisterServer();
+            chanBRegisterForWrite();
         }
         else if (key == writeKeyB)
         {
-            // server Channel write has completed, we can accept another packet from the client
-            readRegisterClient();
+            // Channel B write has completed, we can accept another packet from channel A
+            chanARegisterForRead();
         }
         else if (key == readKeyB)
         {
-            // Write the data received from the server out to the client
-            clientChannel.write(bufferBtoA);
+            // Write the data received from channel B out to channel A
+            channelA.write(bufferBtoA);
 
             // Now wait for that write to complete, before we can reuse this byte buffer
-            writeRegisterClient();
+            chanARegisterForWrite();
         }
         else if (key == writeKeyA)
         {
-            // client channel write has completed, we can accept nother packet from the server
-            readRegisterServer();
+            // Channel A write has completed, we can accept another packet from channel B
+            chanBRegisterForRead();
         }
         else
         {
@@ -166,7 +166,6 @@ class Relay
 
         // In all cases, we don't want the same event twice
         key.cancel();
-
     }
 
     public void start()
@@ -175,8 +174,8 @@ class Relay
             throw new IllegalStateException ("Already started");
 
         started = true;
-        readRegisterClient();
-        readRegisterServer();
+        chanARegisterForRead();
+        chanBRegisterForRead();
     }
 
 }
