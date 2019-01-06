@@ -20,139 +20,176 @@ This file is part of UdpRelay.
 package com.daftdroid.simpleapps.udprelay;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
-class Relay extends Thread
+class Relay
 {
-    private final DatagramSocket rxSocket;
-    private final DatagramSocket txSocket;
-    private final InetSocketAddress remoteTxAddr;
-    private volatile InetSocketAddress remoteRxAddr;
-    private volatile boolean done;
-    private final Relay mirrorOf;
+    private static final int MAX_PACKET_SIZE = 64*1024;
+    private final Selector selector;
+    private final RelaySpec spec;
+    private boolean started;
+    private volatile boolean stopping;
 
-    public Relay(String inAddr, int inport, String outAddr, int outport, String outRemoteAddr, int outRemotePort) throws IOException
+    private class RelayChannel
     {
-        rxSocket = inAddr == null ? new DatagramSocket() :
-                new DatagramSocket(new InetSocketAddress(inAddr, inport));
-
-        txSocket = outAddr == null ? new DatagramSocket() :
-                new DatagramSocket(new InetSocketAddress(outAddr, outport));
-
-        if (outRemoteAddr == null || outRemotePort <= 0)
-        {
-            // This is the relay that will target the remote - find the server if you like, the
-            // address must be concrete.
-            throw new IllegalArgumentException("Remote output address for non-mirror (initiator) may not be ephermeral / unspecified");
-        }
-        remoteTxAddr = new InetSocketAddress(outRemoteAddr, outRemotePort);
-
-        mirrorOf = null; // This is not a mirror, but another relay may be a mirror of it.
-    }
-    /*
-        For constructing relay based on an existing relay. The purpose of this is to relay
-        in the opposite direction.
-     */
-    public Relay(Relay mirror)
-    {
-        rxSocket = mirror.txSocket;
-        txSocket = mirror.rxSocket;
-        remoteTxAddr = null;
-        mirrorOf = mirror;
-    }
-    public Relay(Relay mirror, String outRemoteAddr, int outRemotePort)
-    {
-        rxSocket = mirror.txSocket;
-        txSocket = mirror.rxSocket;
-        // As we are a mirror, we CAN pass null for the remote addr, we get it from the relay
-        // we are mirroring once it is connected.
-        remoteTxAddr = outRemoteAddr == null ? null : new InetSocketAddress(outRemoteAddr, outRemotePort);
-        mirrorOf = mirror;
+        DatagramChannel channel;
+        SocketAddress localAddress;
+        SocketAddress remoteAddress;
+        SelectionKey selectKey;
+        final byte buf[] = new byte[MAX_PACKET_SIZE];
+        final ByteBuffer buffer = ByteBuffer.wrap(buf);
     }
 
+    private final RelayChannel channelA = new RelayChannel();
+    private final RelayChannel channelB = new RelayChannel();
 
-    @Override
-    public void run()
-    {
-        byte buf[] = new byte[1024 * 65];
-        InetSocketAddress remoteOutAddr;
+    public Relay(RelaySpec spec, Selector sel) throws IOException {
+        channelA.channel = DatagramChannel.open();
+        channelA.channel.configureBlocking(false);
+        channelB.channel = DatagramChannel.open();
+        channelB.channel.configureBlocking(false);
+
+        selector = sel;
+        this.spec = spec;
 
         /*
-            If we have no output address and we are a mirror, wait relay we are mirrring to connect,
-            so we can get it's receive address which is our tx address
+            Note that as this is UDP, the definition of client and server are somewhat arbitary,
+            however, for both the "client" link and the "server" link, at least one end of the
+            link needs a well-specified address.
          */
-        if (remoteTxAddr == null && mirrorOf != null)
+
+        if (spec.getChanARemoteIP() == null && spec.getChanALocalIP() == null
+                || spec.getChanBLocalIP() == null && spec.getChanBRemoteIP() == null) {
+            throw new IllegalArgumentException("At least one end of the link must be well known");
+        }
+
+    }
+
+    /*
+        Must not be called in the UI thread!
+     */
+
+    public void initialize() throws IOException
+    {
+        if (spec.getChanALocalIP() != null) {
+            channelA.localAddress = new InetSocketAddress(spec.getChanALocalIP(), spec.getChanALocalPort());
+            channelA.channel.socket().bind(channelA.localAddress);
+        }
+        if (spec.getChanARemoteIP() != null) {
+            channelA.remoteAddress = new InetSocketAddress(spec.getChanARemoteIP(), spec.getChanARemotePort());
+            channelA.channel.socket().connect(channelA.remoteAddress);
+        }
+        if (spec.getChanBLocalIP() != null) {
+            channelB.localAddress = new InetSocketAddress(spec.getChanBLocalIP(), spec.getChanBLocalPort());
+            channelB.channel.socket().bind(channelB.localAddress);
+        }
+        if (spec.getChanBRemoteIP() != null) {
+            channelB.remoteAddress = new InetSocketAddress(spec.getChanBRemoteIP(), spec.getChanBRemotePort());
+            channelB.channel.socket().connect(channelB.remoteAddress);
+        }
+
+        // Start off with them both ready to receive
+        channelA.selectKey = channelA.channel.register(selector, SelectionKey.OP_READ);
+        channelB.selectKey = channelB.channel.register(selector, SelectionKey.OP_READ);
+        channelA.selectKey.attach(this);
+        channelB.selectKey.attach(this);
+
+
+    }
+
+    public void select(SelectionKey key) throws IOException
+    {
+        if (stopping)
+            return;
+        
+        int interestOps = key.interestOps();
+        int op = key.readyOps() & interestOps;
+
+        if (key == channelA.selectKey)
         {
-            remoteOutAddr = mirrorOf.getRemoteRxAddress(); //waits for connect
+            select(channelA, channelB);
+        }
+        else if (key == channelB.selectKey)
+        {
+            select(channelB, channelA);
         }
         else
         {
-            remoteOutAddr = remoteTxAddr;
-        }
-
-        DatagramPacket rxPacket = new DatagramPacket(buf, buf.length);
-
-        DatagramPacket txPacket = remoteOutAddr == null ? new DatagramPacket(buf, buf.length) :
-                new DatagramPacket(buf, buf.length, remoteOutAddr);
-
-        while (!done)
-        {
-            try
-            {
-                rxSocket.receive(rxPacket);
-
-                /*  Now we have received something, figure out the remote's address if we didn't
-                    know it. NB as we are the only setter of remoteTxAddr don't need to sync before
-                    testing it
-                 */
-                if (remoteRxAddr == null)
-                {
-                    synchronized (this)
-                    {
-                        remoteRxAddr = new InetSocketAddress(rxPacket.getAddress(), rxPacket.getPort());
-                        notify();
-                    }
-                }
-                txPacket.setLength(rxPacket.getLength());
-                txSocket.send(txPacket);
-            }
-            catch (IOException e)
-            {
-                if (!done) {
-                    // TODO log error!
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e2) {
-                    }
-                }
-            }
+            throw new IllegalStateException("Unexpected key" + key.toString());
         }
     }
 
-    /*
-        Get the remote's address. If unknown WAITS UNTIL CONNECT
-     */
-    public synchronized InetSocketAddress getRemoteRxAddress()
+    private void select(RelayChannel selectedChannel, RelayChannel otherChannel) throws IOException
     {
-        while (remoteRxAddr == null)
+        SelectionKey key = selectedChannel.selectKey;
+
+        int interestOps = key.interestOps();
+        int op = key.readyOps() & interestOps;
+
+        if ((op & SelectionKey.OP_READ) != 0)
         {
-            try {wait();}
-            catch (InterruptedException e) {return null;}
+            ByteBuffer buffer = selectedChannel.buffer;
+
+            // Write the data received to the other channel
+            buffer.clear();
+            SocketAddress remote = selectedChannel.channel.receive(buffer);
+
+            // Now if we have not yet determined the remote address we get it from here
+            if (selectedChannel.remoteAddress == null)
+            {
+                selectedChannel.remoteAddress = remote;
+                selectedChannel.channel.connect(remote);
+            }
+            // else compare that they match ? TODO
+
+            buffer.limit(buffer.position());
+            buffer.rewind();
+            otherChannel.channel.write(buffer);
+
+            // Now wait for that write to complete, before we can reuse this byte buffer.
+            // Clear read interest for this channel, and set write interest for the other.
+            interestOps &= ~ SelectionKey.OP_READ;
+            key.interestOps(interestOps);
+
+            SelectionKey otherKey = otherChannel.selectKey;
+            otherKey.interestOps(SelectionKey.OP_WRITE | otherKey.interestOps());
         }
-        return remoteRxAddr;
+
+        //  Write operation is NOT mutually exclusive with the above two, it is mutually
+        // exclusive with reading from the other channel
+
+        if ((op & SelectionKey.OP_WRITE) != 0)
+        {
+            // After write has finished, the other channel's buffer is ready for use again
+            SelectionKey otherKey = otherChannel.selectKey;
+            otherKey.interestOps(SelectionKey.OP_READ | otherKey.interestOps());
+        }
     }
 
-    /*
-        Method which causes the thread to quickly run to completion. Closing the sockets
-        will cause the thread to wake (with an excpetion) in the event that it is waiting
-        on send() or, more likely receive().
-     */
-    public void terminate()
+    public void startRelay()
     {
-        done = true;
-        rxSocket.close();
-        txSocket.close();
+        stopping = false;
+        // Register ourself with the network thread, this will call initialize for us
+
+        NetworkThread.getNetworkThread().addRelay(this);
+
+        if (started)
+            throw new IllegalStateException ("Already started");
+
+        started = true;
     }
+
+    public void stopRelay()
+    {
+        stopping = true;
+        try {channelA.channel.close();} catch (IOException e) {}
+        try {channelB.channel.close();} catch (IOException e) {}
+    }
+
 }
