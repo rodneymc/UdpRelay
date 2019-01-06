@@ -21,6 +21,7 @@ This file is part of UdpRelay.
 
 -->
 
+<!-- TODO Google search! -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.daftdroid.simpleapps.udprelay">
@@ -40,6 +41,9 @@ This file is part of UdpRelay.
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".NetworkService"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

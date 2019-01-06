@@ -19,6 +19,7 @@ This file is part of UdpRelay.
 
 package com.daftdroid.simpleapps.udprelay;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -39,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        startService(new Intent(this, NetworkService.class));
+
         // TODO using the demo configs, do something better than this, but if you want to get
         // going you can edit the demo configs to fit your system
 
@@ -46,8 +49,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             addRelay(rs);
         }
-
-        NetworkService.getNetworkThread().start();
     }
     @Override
     public void onClick(View v) {
