@@ -1,25 +1,24 @@
 package com.daftdroid.simpleapps.udprelay;
 
 import java.io.IOException;
-import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class NetworkThread extends Thread {
+public class NetworkService extends Thread {
 
-    private static final NetworkThread singleton;
+    private static final NetworkService singleton;
     private volatile boolean done;
     private List<Relay> registeredRelays = new ArrayList<Relay>();
     private List<Relay> relaysToRegister = new ArrayList<Relay>();
 
     static
     {
-        NetworkThread n = null;
+        NetworkService n = null;
         try {
-            n = new NetworkThread();
+            n = new NetworkService();
         } catch (IOException e) {
             // I don't know what would cause us to get here.
             throw new IllegalStateException("Network thread cannot start");
@@ -31,7 +30,7 @@ public class NetworkThread extends Thread {
 
     private final Selector selector;
 
-    public NetworkThread() throws IOException {
+    public NetworkService() throws IOException {
         selector = Selector.open();
     }
     public Selector selector()
@@ -39,7 +38,7 @@ public class NetworkThread extends Thread {
         return selector;
     }
 
-    public static NetworkThread getNetworkThread()
+    public static NetworkService getNetworkThread()
     {
         return singleton;
     }

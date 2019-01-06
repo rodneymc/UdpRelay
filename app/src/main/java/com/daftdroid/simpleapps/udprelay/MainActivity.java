@@ -22,12 +22,9 @@ package com.daftdroid.simpleapps.udprelay;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
-import android.widget.Button;
 import android.widget.LinearLayout;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             addRelay(rs);
         }
 
-        NetworkThread.getNetworkThread().start();
+        NetworkService.getNetworkThread().start();
     }
     @Override
     public void onClick(View v) {

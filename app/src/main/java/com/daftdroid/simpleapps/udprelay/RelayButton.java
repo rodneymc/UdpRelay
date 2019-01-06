@@ -2,7 +2,6 @@ package com.daftdroid.simpleapps.udprelay;
 
 import android.content.Context;
 import android.support.v7.widget.AppCompatButton;
-import android.widget.Button;
 
 import java.io.IOException;
 
@@ -24,7 +23,7 @@ public class RelayButton extends AppCompatButton {
         try {
 
             if (relay == null) {
-                relay = new Relay(spec, NetworkThread.getNetworkThread().selector());
+                relay = new Relay(spec, NetworkService.getNetworkThread().selector());
                 relay.startRelay();
                 setText(spec.getName()+ " [RUNNING]");
             }

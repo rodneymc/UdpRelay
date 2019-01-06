@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -177,7 +176,7 @@ class Relay
         stopping = false;
         // Register ourself with the network thread, this will call initialize for us
 
-        NetworkThread.getNetworkThread().addRelay(this);
+        NetworkService.getNetworkThread().addRelay(this);
 
         if (started)
             throw new IllegalStateException ("Already started");
