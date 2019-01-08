@@ -189,6 +189,9 @@ class Relay
     public void stopRelay()
     {
         stopping = true;
+    }
+    public void close()
+    {
         try {channelA.channel.close();} catch (IOException e) {}
         try {channelB.channel.close();} catch (IOException e) {}
     }

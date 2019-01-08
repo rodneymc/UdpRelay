@@ -138,6 +138,7 @@ public class NetworkService extends IntentService {
                             Relay r = itr.next();
                             if (r.stopping()) {
                                 itr.remove();
+                                r.close();
                             }
 
                         }
