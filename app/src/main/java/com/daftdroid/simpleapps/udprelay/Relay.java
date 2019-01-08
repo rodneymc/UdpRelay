@@ -166,6 +166,10 @@ class Relay
             // After write has finished, the other channel's buffer is ready for use again
             SelectionKey otherKey = otherChannel.selectKey;
             otherKey.interestOps(SelectionKey.OP_READ | otherKey.interestOps());
+
+            // And we are not insterested in writeable again until another one occurs
+            interestOps &= ~ SelectionKey.OP_WRITE;
+            key.interestOps(interestOps);
         }
     }
 
