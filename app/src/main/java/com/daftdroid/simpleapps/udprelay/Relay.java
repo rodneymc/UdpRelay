@@ -195,5 +195,8 @@ class Relay
         try {channelA.channel.close();} catch (IOException e) {}
         try {channelB.channel.close();} catch (IOException e) {}
     }
+    public RelaySpec getSpec () {
+        return spec;
+    }
 
 }

@@ -182,13 +182,6 @@ public class NetworkService extends IntentService {
         catch (IOException e) {}
     }
 
-    public static void uiRemoveRelay(Relay r)
-    {
-        r.stopRelay();
-        changed = true;
-        singleton.selector.wakeup();
-    }
-
     public static void uiAddRelay(Context ui, Relay r) {
 
 
@@ -238,6 +231,18 @@ public class NetworkService extends IntentService {
                 throw new IllegalStateException("Single-instance-of-service logic failure");
             }
             singleton = null;
+        }
+    }
+
+    public static List<Relay> getActiveRelays()
+    {
+        synchronized (newRelays) {
+            if (singleton == null) {
+                return null;
+            }
+            else {
+                return new ArrayList<Relay>(singleton.registeredRelays);
+            }
         }
     }
 }

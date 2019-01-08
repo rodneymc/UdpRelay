@@ -101,4 +101,6 @@ public class RelaySpec {
                 "192.168.42.150", 7000)
     };
 
+    // TODO equals and hashcode?
+
 }

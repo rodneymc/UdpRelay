@@ -45,9 +45,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // TODO using the demo configs, do something better than this, but if you want to get
         // going you can edit the demo configs to fit your system
 
+        List<Relay> runningList = NetworkService.getActiveRelays();
+
         for (RelaySpec rs: RelaySpec.exampleRelays)
         {
-            addRelay(rs);
+            addRelay(rs, runningList);
         }
     }
     @Override
@@ -56,9 +58,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
          b.click();
     }
 
-    private void addRelay(RelaySpec rSpec)
+    private void addRelay(RelaySpec rSpec, List<Relay> runningList)
     {
-        RelayButton myButton = new RelayButton(this, rSpec);
+        Relay existing = null;
+        // See if we can find a relay running already that matches the spec
+        if (runningList != null) {
+            for (Relay r: runningList) {
+                if (r.getSpec().equals(rSpec)) {
+                    existing = r;
+                    break;
+                }
+            }
+        }
+
+        RelayButton myButton = new RelayButton(this, rSpec, existing);
         relays.add (myButton);
         myButton.setOnClickListener(this);
 

@@ -12,12 +12,17 @@ public class RelayButton extends AppCompatButton {
     private final RelaySpec spec;
     private final Context context;
 
-    public RelayButton(Context c, RelaySpec spec)
+    public RelayButton(Context c, RelaySpec spec, Relay existing)
     {
         super(c);
         this.spec = spec;
         setText(spec.getName());
         this.context = c;
+
+        relay = existing;
+        if (relay != null) {
+            setText(spec.getName()+ " [RUNNING]");
+        }
     }
 
     public void click()
