@@ -2,8 +2,11 @@ package com.daftdroid.simpleapps.udprelay;
 
 import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -73,14 +76,33 @@ public class NetworkService extends IntentService {
         /*
             Use a notification to make it a foreground service
          */
+        final String CHANNEL_ID = "com.daftdroid.udprelay";
+
+        if (Build.VERSION.SDK_INT >= 26) {
+            int importance = NotificationManager.IMPORTANCE_LOW;
+            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, "UDP Relay", importance);
+            NotificationManager mNotificationManager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.createNotificationChannel(mChannel);
+        }
+
         Notification.Builder builder = new Notification.Builder(getBaseContext())
                 .setSmallIcon(R.drawable.notificationinert)
                 .setTicker("Your Ticker") // use something from something from R.string
                 .setContentTitle("UDP Relay") // use something from something from
                 .setContentText("Relay service running") // use something from something from
-                .setProgress(0, 0, true); // display indeterminate progress
+                .setProgress(0, 0, false)
+                .setDefaults(0); // No sound etc?
 
-        startForeground(1, builder.getNotification());
+        if (Build.VERSION.SDK_INT >= 26) {
+            builder.setChannelId(CHANNEL_ID);
+        }
+
+        if (Build.VERSION.SDK_INT >= 16) {
+            startForeground(1, builder.build());
+        } else {
+            startForeground(1, builder.getNotification());
+        }
 
         /*
             Make sure the first time round we get into the if (changed) block, where we might
@@ -180,6 +202,7 @@ public class NetworkService extends IntentService {
 
                 ui.startService(new Intent(ui, NetworkService.class));
             } else {
+                changed = true;
                 singleton.selector.wakeup();
             }
 
