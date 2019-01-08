@@ -1,12 +1,15 @@
 package com.daftdroid.simpleapps.udprelay;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.content.Context;
 import android.content.Intent;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -25,26 +28,34 @@ public class NetworkService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        if (singleton != null) {
+            /*
+                If it set already, then another instance's onCreate method must have
+                been called.
+             */
+            throw new IllegalStateException("Single-instance-of-service logic failure");
+        }
         singleton = this;
     }
 
     private List<Relay> registeredRelays = new ArrayList<Relay>();
-    private List<Relay> newRelays = new ArrayList<Relay>();
 
     private Selector selector;
 
-    public Selector selector()
-    {
-        return selector;
-    }
-
+    /*
+        Sycnrhonize to newServiceRelayList when accessing this data.
+     */
     private static NetworkService singleton;
-    private volatile boolean changed;
-    private volatile boolean running; // Set before launching intent, cleared before exiting intent
+    private static volatile boolean changed;
+    private static final List<Relay> newRelays = new ArrayList<Relay>(1);
+
+    private volatile boolean finishing;
     public static NetworkService getNetworkThread()
     {
         return singleton;
     }
+
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -59,6 +70,24 @@ public class NetworkService extends IntentService {
             return;
         }
 
+        /*
+            Use a notification to make it a foreground service
+         */
+        Notification.Builder builder = new Notification.Builder(getBaseContext())
+                .setSmallIcon(R.drawable.notificationinert)
+                .setTicker("Your Ticker") // use something from something from R.string
+                .setContentTitle("UDP Relay") // use something from something from
+                .setContentText("Relay service running") // use something from something from
+                .setProgress(0, 0, true); // display indeterminate progress
+
+        startForeground(1, builder.getNotification());
+
+        /*
+            Make sure the first time round we get into the if (changed) block, where we might
+            break and finish, if there is nothing to do.
+         */
+        changed = true;
+
         while (true) {
             try {
 
@@ -67,7 +96,7 @@ public class NetworkService extends IntentService {
 
                     List<Relay> newRelaysCpy = null;
 
-                    synchronized (this)
+                    synchronized (newRelays)
                     {
                         // Add all the new relays into the registeredRelays list, and create
                         // a new blank list of relays to register, however keep a reference to the
@@ -75,21 +104,35 @@ public class NetworkService extends IntentService {
 
                         if (this.newRelays.size() > 0)
                         {
-                            newRelaysCpy = this.newRelays;
-                            this.newRelays = new ArrayList<Relay>(1);
+                            newRelaysCpy = new ArrayList<Relay>(newRelays);
+                            newRelays.clear();
+
+                            for (Relay r: newRelaysCpy) {
+                                registeredRelays.add(r);
+                            }
+                        }
+
+                        for (Iterator<Relay> itr = registeredRelays.iterator(); itr.hasNext();) {
+                            Relay r = itr.next();
+                            if (r.stopping()) {
+                                itr.remove();
+                            }
+
                         }
                         changed = false;
 
                         // If there are no relays, we can quit
-                        if (registeredRelays.size() == 0)
+                        if (registeredRelays.size() == 0) {
+                            finishing = true;
                             break;
+                        }
                     }
 
                     if (newRelaysCpy != null)
                     {
                         for (Relay r: newRelaysCpy)
                         {
-                            r.initialize();
+                            r.initialize(selector);
                         }
                     }
                 }
@@ -116,28 +159,61 @@ public class NetworkService extends IntentService {
         catch (IOException e) {}
     }
 
-    public synchronized void addRelay(Relay relay)
+    public static void uiRemoveRelay(Relay r)
     {
-        /*
-            If there are no registered relays, queue up a new work request, which will remain
-            active until this drops to zero again
-         */
-        if (registeredRelays.size() == 0)
-        {
-            // Intent is just a dummy we don't use it to communicate with righ tnow
-            Intent i = new Intent(this, NetworkService.class);
-            startService(i);
-        }
-
-        newRelays.add(relay);
-        registeredRelays.add(relay);
+        r.stopRelay();
         changed = true;
-        selector.wakeup();
+        singleton.selector.wakeup();
     }
-    public synchronized void removeRelay(Relay r)
-    {
-        registeredRelays.remove(r);
-        changed = true;
-        selector.wakeup();
+
+    public static void uiAddRelay(Context ui, Relay r) {
+
+
+        /*
+            It was not possible to attach the relay to an existing service. There may be
+            a new service creation already in the pipeline (as indicated by there already
+            being an entry in newServiceRelayList) if not we need to start one.
+         */
+        synchronized (newRelays) {
+            if (newRelays.size() == 0 && (singleton == null || singleton.finishing)) {
+                // A new service needs to be created.
+
+                ui.startService(new Intent(ui, NetworkService.class));
+            } else {
+                singleton.selector.wakeup();
+            }
+
+            newRelays.add(r);
+        }
+    }
+    public static void wakeup() {
+
+        synchronized (newRelays) {
+            if (singleton != null) {
+                changed = true;
+                singleton.selector.wakeup();
+            }
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        /*
+            Don't pull the rug while static methods have the lock on newRelays otherwise we have
+            a small window for NPE on code like if (singleton != null && !singleton.finishing)
+         */
+
+        synchronized (newRelays) {
+            if (singleton == null) {
+                /*
+                    If it was null already, then another instance's onDestroy method must have
+                    been called.
+                 */
+                throw new IllegalStateException("Single-instance-of-service logic failure");
+            }
+            singleton = null;
+        }
     }
 }

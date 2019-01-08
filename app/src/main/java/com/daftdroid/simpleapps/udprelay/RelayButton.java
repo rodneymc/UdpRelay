@@ -10,12 +10,14 @@ public class RelayButton extends AppCompatButton {
 
     private Relay relay;
     private final RelaySpec spec;
+    private final Context context;
 
     public RelayButton(Context c, RelaySpec spec)
     {
         super(c);
         this.spec = spec;
         setText(spec.getName());
+        this.context = c;
     }
 
     public void click()
@@ -23,12 +25,15 @@ public class RelayButton extends AppCompatButton {
         try {
 
             if (relay == null) {
-                relay = new Relay(spec, NetworkService.getNetworkThread().selector());
+                relay = new Relay(spec);
                 relay.startRelay();
+                NetworkService.uiAddRelay(context, relay);
+
                 setText(spec.getName()+ " [RUNNING]");
             }
             else {
                 relay.stopRelay();
+                NetworkService.wakeup();
                 relay = null;
                 setText(spec.getName());
             }

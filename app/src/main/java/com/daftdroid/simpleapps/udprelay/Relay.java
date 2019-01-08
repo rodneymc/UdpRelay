@@ -30,7 +30,6 @@ import java.nio.channels.Selector;
 class Relay
 {
     private static final int MAX_PACKET_SIZE = 64*1024;
-    private final Selector selector;
     private final RelaySpec spec;
     private boolean started;
     private volatile boolean stopping;
@@ -48,13 +47,12 @@ class Relay
     private final RelayChannel channelA = new RelayChannel();
     private final RelayChannel channelB = new RelayChannel();
 
-    public Relay(RelaySpec spec, Selector sel) throws IOException {
+    public Relay(RelaySpec spec) throws IOException {
         channelA.channel = DatagramChannel.open();
         channelA.channel.configureBlocking(false);
         channelB.channel = DatagramChannel.open();
         channelB.channel.configureBlocking(false);
 
-        selector = sel;
         this.spec = spec;
 
         /*
@@ -74,7 +72,7 @@ class Relay
         Must not be called in the UI thread!
      */
 
-    public void initialize() throws IOException
+    public void initialize(Selector selector) throws IOException
     {
         if (spec.getChanALocalIP() != null) {
             channelA.localAddress = new InetSocketAddress(spec.getChanALocalIP(), spec.getChanALocalPort());
@@ -174,14 +172,14 @@ class Relay
     public void startRelay()
     {
         stopping = false;
-        // Register ourself with the network thread, this will call initialize for us
-
-        NetworkService.getNetworkThread().addRelay(this);
 
         if (started)
             throw new IllegalStateException ("Already started");
 
         started = true;
+    }
+    public boolean stopping() {
+        return stopping;
     }
 
     public void stopRelay()

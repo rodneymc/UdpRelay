@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg4526"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="notification-inert.svg"
+   inkscape:export-filename="/home/dave/AndroidStudioProjects/UDPRelay/app/src/drawing-orig/notification-inert.png"
+   inkscape:export-xdpi="1516.89"
+   inkscape:export-ydpi="1516.89">
+  <defs
+     id="defs4520" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="15.839192"
+     inkscape:cx="12.789272"
+     inkscape:cy="606.10423"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:window-width="1366"
+     inkscape:window-height="703"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid5071"
+       units="px" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata4523">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="opacity:1;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.1;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect5075"
+       width="7.9375"
+       height="7.9375"
+       x="0"
+       y="132.95833" />
+    <g
+       id="g5107"
+       transform="translate(-0.52916667,-3.3333333e-6)">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5077"
+         d="m 2.6458333,133.75208 -1.3229167,1.85209 H 3.96875 Z"
+         style="fill:none;fill-rule:evenodd;stroke:#fffffc;stroke-width:0.26499999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         inkscape:connector-curvature="0"
+         id="path5081"
+         d="m 2.1166666,135.60417 v 4.7625 H 3.175 v -4.7625"
+         style="fill:none;fill-rule:evenodd;stroke:#ffffff;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+    </g>
+    <g
+       id="g5103"
+       transform="matrix(1,0,0,-1,-0.26458333,273.85417)">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5077-8"
+         d="M 6.0854167,133.75208 4.7625,135.60417 h 2.6458335 z"
+         style="fill:none;fill-rule:evenodd;stroke:#fffffc;stroke-width:0.26499999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         inkscape:connector-curvature="0"
+         id="path5081-2"
+         d="m 5.55625,135.60417 v 4.7625 h 1.0583335 v -4.7625"
+         style="fill:none;fill-rule:evenodd;stroke:#ffffff;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+    </g>
+  </g>
+</svg>
