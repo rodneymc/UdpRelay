@@ -54,10 +54,6 @@ public class NetworkService extends IntentService {
     private static volatile boolean changed;
 
     private volatile boolean finishing;
-    public static NetworkService getNetworkThread() {
-        return singleton;
-    }
-
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -208,7 +204,7 @@ public class NetworkService extends IntentService {
         newRelays.add(r);
     }
 
-    public static void wakeup() {
+    public static synchronized void wakeup() {
 
      if (singleton != null) {
            changed = true;
