@@ -47,15 +47,14 @@ public class NetworkService extends IntentService {
     private Selector selector;
 
     /*
-        Sycnrhonize to newServiceRelayList when accessing this data.
+        Static data, modifiable from multiple threads by syncrhonizing on class.
      */
     private static NetworkService singleton;
+    private static List<Relay> newRelays; // Static, incase a network service instance isn't created yet
     private static volatile boolean changed;
-    private static final List<Relay> newRelays = new ArrayList<Relay>(1);
 
     private volatile boolean finishing;
-    public static NetworkService getNetworkThread()
-    {
+    public static NetworkService getNetworkThread() {
         return singleton;
     }
 
@@ -88,9 +87,8 @@ public class NetworkService extends IntentService {
 
         Notification.Builder builder = new Notification.Builder(getBaseContext())
                 .setSmallIcon(R.drawable.notificationinert)
-                .setTicker("Your Ticker") // use something from something from R.string
-                .setContentTitle("UDP Relay") // use something from something from
-                .setContentText("Relay service running") // use something from something from
+                .setContentTitle("UDP Relay")
+                .setContentText("Relay service running")
                 .setProgress(0, 0, false)
                 .setDefaults(0); // No sound etc?
 
@@ -113,21 +111,25 @@ public class NetworkService extends IntentService {
         while (true) {
             try {
 
-                if (changed) {
-                    // See if any new relays have appeared
+                List<Relay> newRelaysCpy = null;
 
-                    List<Relay> newRelaysCpy = null;
+                synchronized (NetworkService.class)
+                {
+                    if (changed) {
+                        // See if any new relays have appeared
 
-                    synchronized (newRelays)
-                    {
+
                         // Add all the new relays into the registeredRelays list, and create
                         // a new blank list of relays to register, however keep a reference to the
                         // old one (newRelays) - these are to be initialized outside the syncrhonized block)
 
-                        if (this.newRelays.size() > 0)
+                        if (newRelays != null && newRelays.size() > 0)
                         {
-                            newRelaysCpy = new ArrayList<Relay>(newRelays);
-                            newRelays.clear();
+                            // Once we leave the syncrhonized block, newRelays could be set
+                            // again by another thread.
+
+                            newRelaysCpy = newRelays;
+                            newRelays = null;
 
                             for (Relay r: newRelaysCpy) {
                                 registeredRelays.add(r);
@@ -147,6 +149,7 @@ public class NetworkService extends IntentService {
                         // If there are no relays, we can quit
                         if (registeredRelays.size() == 0) {
                             finishing = true;
+                            registeredRelays = null;
                             break;
                         }
                     }
@@ -182,34 +185,34 @@ public class NetworkService extends IntentService {
         catch (IOException e) {}
     }
 
-    public static void uiAddRelay(Context ui, Relay r) {
-
+    public static synchronized  void uiAddRelay(Context ui, Relay r) {
 
         /*
             It was not possible to attach the relay to an existing service. There may be
             a new service creation already in the pipeline (as indicated by there already
             being an entry in newServiceRelayList) if not we need to start one.
          */
-        synchronized (newRelays) {
-            if (newRelays.size() == 0 && (singleton == null || singleton.finishing)) {
-                // A new service needs to be created.
 
-                ui.startService(new Intent(ui, NetworkService.class));
-            } else {
-                changed = true;
-                singleton.selector.wakeup();
-            }
+        if (newRelays == null && (singleton == null || singleton.finishing)) {
+            // A new service needs to be created.
 
-            newRelays.add(r);
+            ui.startService(new Intent(ui, NetworkService.class));
+        } else {
+            changed = true;
+            singleton.selector.wakeup();
         }
+
+        if (newRelays == null) {
+            newRelays = new ArrayList<Relay>(1);
+        }
+        newRelays.add(r);
     }
+
     public static void wakeup() {
 
-        synchronized (newRelays) {
-            if (singleton != null) {
-                changed = true;
-                singleton.selector.wakeup();
-            }
+     if (singleton != null) {
+           changed = true;
+           singleton.selector.wakeup();
         }
     }
 
@@ -222,7 +225,7 @@ public class NetworkService extends IntentService {
             a small window for NPE on code like if (singleton != null && !singleton.finishing)
          */
 
-        synchronized (newRelays) {
+        synchronized (NetworkService.class) {
             if (singleton == null) {
                 /*
                     If it was null already, then another instance's onDestroy method must have
@@ -234,15 +237,11 @@ public class NetworkService extends IntentService {
         }
     }
 
-    public static List<Relay> getActiveRelays()
-    {
-        synchronized (newRelays) {
-            if (singleton == null) {
-                return null;
-            }
-            else {
-                return new ArrayList<Relay>(singleton.registeredRelays);
-            }
+    public static synchronized List<Relay> getActiveRelays() {
+        if (singleton == null) {
+            return null;
+        } else {
+            return new ArrayList<Relay>(singleton.registeredRelays);
         }
     }
 }
