@@ -41,6 +41,13 @@ class Relay
         WRITE_ERROR_UNKNOWN, DESTINATION_UNREACHABLE};
     private ErrorState errorState = ErrorState.NONE;
     private RelayChannel errorChannel; // The channel that errored.
+    private final int uniqueId;
+
+    private static int nextUniqueId;
+
+    public static final int ERROR_SOFT = 1;
+    public static final int ERROR_HARD = 2;
+    public static final int ERROR_NONE = 0;
 
     private class RelayChannel
     {
@@ -73,7 +80,7 @@ class Relay
                 || spec.getChanBLocalIP() == null && spec.getChanBRemoteIP() == null) {
             throw new IllegalArgumentException("At least one end of the link must be well known");
         }
-
+        uniqueId = getNextUniqueId();
     }
 
     /*
@@ -276,5 +283,11 @@ class Relay
     public boolean softError() {
         // Only one known type of soft error.
         return errorState != ErrorState.DESTINATION_UNREACHABLE;
+    }
+    public int getUniqueId() {
+        return uniqueId;
+    }
+    public static synchronized int getNextUniqueId() {
+        return nextUniqueId++;
     }
 }

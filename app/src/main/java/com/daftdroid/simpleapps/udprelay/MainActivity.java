@@ -20,6 +20,8 @@ This file is part of UdpRelay.
 package com.daftdroid.simpleapps.udprelay;
 
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -39,6 +41,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        /*
+            Register for receiving status updates to the buttons in the event
+            of network errors.
+         */
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                new NetServiceBroadcastReceiver(this),
+                new IntentFilter(NetworkService.BROADCAST_ACTION));
 
         // TODO using the demo configs, do something better than this, but if you want to get
         // going you can edit the demo configs to fit your system
@@ -82,6 +92,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         for (RelayButton rb: relays) {
             if (rb.getRelay().equals(r)) {
+                return rb;
+            }
+        }
+
+        return null;
+    }
+
+    public RelayButton getRelayButton(int id) {
+        for (RelayButton rb: relays) {
+            Relay r = rb.getRelay();
+
+            if (r != null && r.getUniqueId() == id) {
                 return rb;
             }
         }

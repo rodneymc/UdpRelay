@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.support.v4.content.LocalBroadcastManager;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -17,6 +18,15 @@ import java.util.List;
 import java.util.Set;
 
 public class NetworkService extends IntentService {
+
+    public static final String BROADCAST_ACTION =
+            "com.daftdroid.simpleapps.udprelay.NETSERVICE_BROADCAST";
+    public static final String BROADCAST_ERRSTATUS =
+            "com.daftdroid.simpleapps.udprelay.NETSERVICE_ERRSTATUS";
+    public static final String BROADCAST_ERRSTRING =
+            "com.daftdroid.simpleapps.udprelay.NETSERVICE_ERRSTRING";
+    public static final String BROADCAST_RLYNUM =
+            "com.daftdroid.simpleapps.udprelay.NETSERVICE_RLYNUM";
 
 
     /**
@@ -52,8 +62,7 @@ public class NetworkService extends IntentService {
     private static NetworkService singleton;
     private static List<Relay> newRelays; // Static, incase a network service instance isn't created yet
     private static volatile boolean changed;
-
-    private volatile boolean finishing;
+    private boolean finishing;
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -105,84 +114,30 @@ public class NetworkService extends IntentService {
         changed = true;
 
         while (true) {
+            while (processRegisteredRelays()) {
+            }
+
+            if (finishing) {
+                /*
+                    If the above call decided we were done, then we are done, there may be a new
+                    one being launched (it's an unlikely race but it could happen) but this instance
+                    is done.
+                 */
+                break;
+            }
+
             try {
-
-                List<Relay> newRelaysCpy = null;
-
-                synchronized (NetworkService.class)
-                {
-                    if (changed) {
-                        // See if any new relays have appeared
-
-
-                        // Add all the new relays into the registeredRelays list, and create
-                        // a new blank list of relays to register, however keep a reference to the
-                        // old one (newRelays) - these are to be initialized outside the syncrhonized block)
-
-                        if (newRelays != null && newRelays.size() > 0)
-                        {
-                            // Once we leave the syncrhonized block, newRelays could be set
-                            // again by another thread.
-
-                            newRelaysCpy = newRelays;
-                            newRelays = null;
-
-                            for (Relay r: newRelaysCpy) {
-                                registeredRelays.add(r);
-                            }
-                        }
-
-                        for (Iterator<Relay> itr = registeredRelays.iterator(); itr.hasNext();) {
-                            Relay r = itr.next();
-
-                            boolean hasError = r.hasError();
-
-                            if (hasError) {
-                                r.suspendRelay();
-
-                                // TODO ui error handling
-                            }
-                            if (hasError || r.stopping()) {
-                                itr.remove();
-                                r.close();
-                            }
-
-                        }
-                        /*
-                            We have processed all the changes to static data.
-                         */
-                        changed = false;
-
-                        // If there are no relays, we can quit
-                        if (registeredRelays.size() == 0) {
-                            finishing = true;
-                            registeredRelays = null;
-                            break;
-                        }
-                    }
-
-                    if (newRelaysCpy != null)
-                    {
-                        for (Relay r: newRelaysCpy)
-                        {
-                            r.initialize(selector);
-                        }
-                    }
-                }
                 selector.select();
                 Set<SelectionKey> keySet = selector.selectedKeys();
 
-                for (SelectionKey key: keySet)
-                {
+                for (SelectionKey key : keySet) {
                     Object attachment;
 
-                    if ((attachment = key.attachment()) instanceof Relay)
-                    {
+                    if ((attachment = key.attachment()) instanceof Relay) {
                         Relay r = (Relay) attachment;
                         r.select(key);
                     }
                 }
-
             } catch (IOException e) {
                 throw new IllegalStateException("IOException here is a TODO", e); // TODO
             }
@@ -192,6 +147,70 @@ public class NetworkService extends IntentService {
         catch (IOException e) {}
     }
 
+    private boolean processRegisteredRelays() {
+        List<Relay> newRelaysCpy = null;
+
+        synchronized(NetworkService.class) {
+            if (changed) {
+                // See if any new relays have appeared
+
+
+                // Add all the new relays into the registeredRelays list, and create
+                // a new blank list of relays to register, however keep a reference to the
+                // old one (newRelays) - these are to be initialized outside the syncrhonized block)
+
+                if (newRelays != null && newRelays.size() > 0) {
+                    // Once we leave the syncrhonized block, newRelays could be set
+                    // again by another thread.
+
+                    newRelaysCpy = newRelays;
+                    newRelays = null;
+
+                    for (Relay r : newRelaysCpy) {
+                        registeredRelays.add(r);
+                    }
+                }
+                changed = false;
+
+        } else {
+                return false; // syncrhonized confirmation there is no more to do
+            }
+        }
+
+        if (newRelaysCpy != null) {
+            for (Relay r: newRelaysCpy) {
+                r.initialize(selector);
+            }
+        }
+
+        for (Iterator<Relay> itr = registeredRelays.iterator(); itr.hasNext();) {
+            Relay r = itr.next();
+
+            boolean hasError = r.hasError();
+
+            if (hasError) {
+                r.suspendRelay();
+                broadcastError(r, Relay.ERROR_HARD, "Error");
+            }
+            if (hasError || r.stopping()) {
+                itr.remove();
+                r.close();
+            }
+        }
+
+        // If there are no relays, we can quit
+
+        synchronized (NetworkService.class) {
+            if (registeredRelays.size() == 0) {
+                singleton = null; // tell async threads
+                finishing = true; // tell the caller
+                registeredRelays = null;
+                return false;
+            }
+        }
+
+        return true;
+    }
     public static synchronized  void uiAddRelay(Context ui, Relay r) {
 
         /*
@@ -223,32 +242,21 @@ public class NetworkService extends IntentService {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-        /*
-            Don't pull the rug while static methods have the lock on newRelays otherwise we have
-            a small window for NPE on code like if (singleton != null && !singleton.finishing)
-         */
-
-        synchronized (NetworkService.class) {
-            if (singleton == null) {
-                /*
-                    If it was null already, then another instance's onDestroy method must have
-                    been called.
-                 */
-                throw new IllegalStateException("Single-instance-of-service logic failure");
-            }
-            singleton = null;
-        }
-    }
-
     public static synchronized List<Relay> getActiveRelays() {
         if (singleton == null) {
             return null;
         } else {
             return new ArrayList<Relay>(singleton.registeredRelays);
         }
+    }
+
+    private void broadcastError(Relay r, int errlevel, String error) {
+
+        Intent localIntent = new Intent(BROADCAST_ACTION)
+                .putExtra(BROADCAST_ERRSTATUS, errlevel)
+                .putExtra(BROADCAST_ERRSTRING, error)
+                .putExtra(BROADCAST_RLYNUM, r.getUniqueId());
+
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 }
