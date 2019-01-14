@@ -40,8 +40,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        startService(new Intent(this, NetworkService.class));
-
         // TODO using the demo configs, do something better than this, but if you want to get
         // going you can edit the demo configs to fit your system
 
@@ -78,7 +76,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
         ll.addView(myButton, lp);
+    }
 
+    public RelayButton getAssociatedButton(Relay r) {
+
+        for (RelayButton rb: relays) {
+            if (rb.getRelay().equals(r)) {
+                return rb;
+            }
+        }
+
+        return null;
     }
 
 }

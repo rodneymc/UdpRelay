@@ -134,12 +134,23 @@ public class NetworkService extends IntentService {
 
                         for (Iterator<Relay> itr = registeredRelays.iterator(); itr.hasNext();) {
                             Relay r = itr.next();
-                            if (r.stopping()) {
+
+                            boolean hasError = r.hasError();
+
+                            if (hasError) {
+                                r.suspendRelay();
+
+                                // TODO ui error handling
+                            }
+                            if (hasError || r.stopping()) {
                                 itr.remove();
                                 r.close();
                             }
 
                         }
+                        /*
+                            We have processed all the changes to static data.
+                         */
                         changed = false;
 
                         // If there are no relays, we can quit
