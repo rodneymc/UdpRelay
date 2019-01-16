@@ -7,12 +7,7 @@ eg 192.168.49.130:1194
 
 This will work even if your provider does not allow tethering. I will be blogging about this shortly.
 
-The code is very embrionic. The IP addresses are currently hard-coded and you will need to edit the source for your needs:
-Please ajust the following settings accoringly (in MainActivity.java)
-
- * SERVER_IP, SERVER_PORT - the address of the remote service
- * ANDROID_LOCAL_IP, ANDROID_LOCAL_PORT - the LAN address at which the service will appear locally 
- * CLIENT_IP, CLIENT_PORT - the address of the client which requires access to the service
+The code is very embrionic. The IP addresses are currently hard-coded and you will need to edit the source for your needs. Please see RelaySpec.java for example configurations. You can replace the example configuration in there with real ones and the app will use them.
 
 TODO:
  * A user interface, including
@@ -20,7 +15,5 @@ TODO:
    * Error logging
    * License
    * Instruction manual
- * Support clients connecting from an arbitrary address
- * Support running as a "service" without needing to keep the main activity alive
  * An icon
  
