@@ -33,6 +33,7 @@ import java.nio.channels.Selector;
 class Relay
 {
     private static final int MAX_PACKET_SIZE = 64*1024;
+    private static final int MAX_RETRIES = 3;
     private final RelaySpec spec;
     private boolean started;
     private volatile boolean stopping;
@@ -57,6 +58,8 @@ class Relay
         SelectionKey selectKey;
         final byte buf[] = new byte[MAX_PACKET_SIZE];
         final ByteBuffer buffer = ByteBuffer.wrap(buf);
+        int readRetriesRemaining;
+        int writeRetriesRemaining;
     }
 
     private final RelayChannel channelA = new RelayChannel();
@@ -81,6 +84,17 @@ class Relay
             throw new IllegalArgumentException("At least one end of the link must be well known");
         }
         uniqueId = getNextUniqueId();
+    }
+    /*
+        Constructor for creating a new relay from a suspended one
+     */
+    public Relay(Relay suspended) throws IOException {
+        this(suspended.spec);
+        channelA.readRetriesRemaining = suspended.channelA.readRetriesRemaining -1;
+        channelA.writeRetriesRemaining = suspended.channelA.writeRetriesRemaining -1;
+        channelB.readRetriesRemaining = suspended.channelB.readRetriesRemaining -1;
+        channelB.writeRetriesRemaining = suspended.channelB.writeRetriesRemaining -1;
+
     }
 
     /*
@@ -173,6 +187,9 @@ class Relay
             try {
                 SocketAddress remote = selectedChannel.channel.receive(buffer);
 
+                // Received without exception - reset the retry count
+                selectedChannel.readRetriesRemaining = MAX_RETRIES;
+
                 // Now if we have not yet determined the remote address we get it from here
                 if (selectedChannel.remoteAddress == null) {
                     selectedChannel.remoteAddress = remote;
@@ -193,6 +210,10 @@ class Relay
 
             try {
                 otherChannel.channel.write(buffer);
+
+                // Write without exception - reset retry count
+                otherChannel.writeRetriesRemaining = MAX_RETRIES;
+
             } catch (PortUnreachableException | NoRouteToHostException e) {
                 error = e;
                 errorState = ErrorState.DESTINATION_UNREACHABLE;
@@ -244,29 +265,12 @@ class Relay
     {
         stopping = true;
     }
-    public void suspendRelay() {
-        // Deregister the selection keys
-        channelA.selectKey.cancel();
-        channelB.selectKey.cancel();
-    }
-    public void restartRelay(Selector selector) {
-
-        errorChannel = null;
-        errorState = ErrorState.NONE;
-        error = null;
-
-        // Reregister the keys, for reading
-        try {
-            channelA.selectKey = channelA.channel.register(selector, SelectionKey.OP_READ);
-            channelA.selectKey = channelA.channel.register(selector, SelectionKey.OP_READ);
-        } catch (IOException e) {
-            error = e;
-            errorState = ErrorState.START_ERROR_UNKNOWN;
-        }
-    }
 
     public void close()
     {
+        channelA.selectKey.cancel();
+        channelB.selectKey.cancel();
+
         try {channelA.channel.close();} catch (IOException e) {}
         try {channelB.channel.close();} catch (IOException e) {}
     }
@@ -281,8 +285,8 @@ class Relay
         (if there is no error, also returns false though the result is not really applicable).
      */
     public boolean softError() {
-        // Only one known type of soft error.
-        return errorState != ErrorState.DESTINATION_UNREACHABLE;
+        return channelA.writeRetriesRemaining > 0 && channelA.readRetriesRemaining > 0
+                && channelB.writeRetriesRemaining > 0 && channelB.readRetriesRemaining > 0;
     }
     public int getUniqueId() {
         return uniqueId;
@@ -290,4 +294,23 @@ class Relay
     public static synchronized int getNextUniqueId() {
         return nextUniqueId++;
     }
+
+    // Error message state, readable and writable but not updated by this class
+    private String statusMessage;
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+    public void setStatusMessage(String msg) {
+        statusMessage = msg;
+    }
+
+    private int errorLevel;
+    public int getErrorLevel() {
+        return errorLevel;
+    }
+    public void setErrorLevel(int level) {
+        errorLevel = level;
+    }
+
+
 }

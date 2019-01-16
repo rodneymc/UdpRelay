@@ -16,11 +16,10 @@ public class NetServiceBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
 
         RelayButton rb = main.getRelayButton(intent.getIntExtra(NetworkService.BROADCAST_RLYNUM, 0));
-        String errString = intent.getStringExtra(NetworkService.BROADCAST_ERRSTRING);
-        int status = intent.getIntExtra(NetworkService.BROADCAST_ERRSTATUS, 0);
 
         if (rb != null) { // not sure it should ever be null..
-            rb.setError(status, errString);
+            rb.updateRelay();
+            rb.updateText();
         }
     }
 }

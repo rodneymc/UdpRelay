@@ -21,10 +21,6 @@ public class NetworkService extends IntentService {
 
     public static final String BROADCAST_ACTION =
             "com.daftdroid.simpleapps.udprelay.NETSERVICE_BROADCAST";
-    public static final String BROADCAST_ERRSTATUS =
-            "com.daftdroid.simpleapps.udprelay.NETSERVICE_ERRSTATUS";
-    public static final String BROADCAST_ERRSTRING =
-            "com.daftdroid.simpleapps.udprelay.NETSERVICE_ERRSTRING";
     public static final String BROADCAST_RLYNUM =
             "com.daftdroid.simpleapps.udprelay.NETSERVICE_RLYNUM";
 
@@ -149,7 +145,6 @@ public class NetworkService extends IntentService {
 
     private boolean processRegisteredRelays() {
         List<Relay> newRelaysCpy = null;
-        final boolean changed_ret;
 
         synchronized(NetworkService.class) {
 
@@ -179,6 +174,7 @@ public class NetworkService extends IntentService {
         if (newRelaysCpy != null) {
             for (Relay r: newRelaysCpy) {
                 r.initialize(selector);
+                broadcastStatus(r, Relay.ERROR_NONE, "RUNNING");
             }
         }
 
@@ -188,8 +184,11 @@ public class NetworkService extends IntentService {
             boolean hasError = r.hasError();
 
             if (hasError) {
-                r.suspendRelay();
-                broadcastError(r, Relay.ERROR_HARD, "Error");
+                if (r.softError()) {
+                    new ErrorCountdown(this, r).run();
+                } else {
+                    broadcastStatus(r, Relay.ERROR_HARD, "Error");
+                }
             }
             if (hasError || r.stopping()) {
                 itr.remove();
@@ -231,6 +230,9 @@ public class NetworkService extends IntentService {
         }
         newRelays.add(r);
     }
+    public void addRelay(Relay r) {
+        uiAddRelay(this, r);
+    }
 
     public static synchronized void wakeup() {
 
@@ -248,12 +250,13 @@ public class NetworkService extends IntentService {
         }
     }
 
-    private void broadcastError(Relay r, int errlevel, String error) {
+    void broadcastStatus(Relay r, int errlevel, String msg) {
 
         Intent localIntent = new Intent(BROADCAST_ACTION)
-                .putExtra(BROADCAST_ERRSTATUS, errlevel)
-                .putExtra(BROADCAST_ERRSTRING, error)
                 .putExtra(BROADCAST_RLYNUM, r.getUniqueId());
+
+        r.setErrorLevel(errlevel);
+        r.setStatusMessage(msg);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
