@@ -88,17 +88,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ll.addView(myButton, lp);
     }
 
-    public RelayButton getAssociatedButton(Relay r) {
-
-        for (RelayButton rb: relays) {
-            if (rb.getRelay().equals(r)) {
-                return rb;
-            }
-        }
-
-        return null;
-    }
-
     public RelayButton getRelayButton(int id) {
         for (RelayButton rb: relays) {
             Relay r = rb.getRelay();

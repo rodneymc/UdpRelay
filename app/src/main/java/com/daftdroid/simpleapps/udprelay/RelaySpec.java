@@ -1,15 +1,13 @@
 package com.daftdroid.simpleapps.udprelay;
 
+import android.os.Build;
+
+import java.util.Objects;
+
 public class RelaySpec {
     public static final String EPHEMERAL_IP = null;
     public static final int EPHEMERAL_PORT = 0;
     public static final int WELL_KNOWN_PORT = 1194; // Assuming OpenVPN
-
-    /* Conventions
-                         local ip        public ip
-    client ---------------- Android Device -------------- Server
-
-     */
 
     private final String name;
     private final String chanAlocalIP;
@@ -101,6 +99,32 @@ public class RelaySpec {
                 "192.168.42.150", 7000)
     };
 
-    // TODO equals and hashcode?
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof RelaySpec)) {
+            return false;
+        }
+        RelaySpec o = (RelaySpec) other;
 
+        return o == this ||
+                        o.chanAlocalIP == chanAlocalIP &&
+                        o.chanAlocalPort == chanAlocalPort &&
+                        o.chanAremoteIP == chanAremoteIP &&
+                        o.chanAremotePort == chanAremotePort &&
+                        o.chanBlocalIP == chanBlocalIP &&
+                        o.chanBlocalPort == chanBlocalPort &&
+                        o.chanBremoteIP == chanBlocalIP &&
+                        o.chanBremotePort == chanBremotePort;
+    }
+    @Override
+    public int hashCode() {
+
+        if (Build.VERSION.SDK_INT >= 19) {
+            return Objects.hash(chanAremoteIP, chanAremotePort, chanAlocalIP, chanAlocalPort,
+                    chanBremoteIP, chanBremotePort, chanBlocalIP, chanBlocalPort);
+        }
+
+        return chanAremoteIP.hashCode() + chanAremotePort + chanAlocalIP.hashCode() + chanAlocalPort +
+                chanBremoteIP.hashCode() + chanBremotePort + chanBlocalIP.hashCode() + chanBremotePort;
+    }
 }
