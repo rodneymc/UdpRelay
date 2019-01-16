@@ -149,8 +149,10 @@ public class NetworkService extends IntentService {
 
     private boolean processRegisteredRelays() {
         List<Relay> newRelaysCpy = null;
+        final boolean changed_ret;
 
         synchronized(NetworkService.class) {
+
             if (changed) {
                 // See if any new relays have appeared
 
@@ -171,9 +173,6 @@ public class NetworkService extends IntentService {
                     }
                 }
                 changed = false;
-
-        } else {
-                return false; // syncrhonized confirmation there is no more to do
             }
         }
 
@@ -198,18 +197,17 @@ public class NetworkService extends IntentService {
             }
         }
 
-        // If there are no relays, we can quit
+        // If all the relays are gone, and the UI hasn't asyncronously requested some new ones
+        // (by setting "changed"), then we can quit, indicated by setting singleton null.
 
         synchronized (NetworkService.class) {
-            if (registeredRelays.size() == 0) {
+            if (registeredRelays.size() == 0 && !changed) {
                 singleton = null; // tell async threads
                 finishing = true; // tell the caller
                 registeredRelays = null;
-                return false;
             }
+            return changed; // return the value of changed while we were syncrhonized
         }
-
-        return true;
     }
     public static synchronized  void uiAddRelay(Context ui, Relay r) {
 
