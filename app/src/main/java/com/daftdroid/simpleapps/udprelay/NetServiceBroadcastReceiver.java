@@ -18,7 +18,8 @@ public class NetServiceBroadcastReceiver extends BroadcastReceiver {
         RelayButton rb = main.getRelayButton(intent.getIntExtra(NetworkService.BROADCAST_RLYNUM, 0));
 
         if (rb != null) { // not sure it should ever be null..
-            rb.updateRelay();
+            // Note that main.getRelayButton is gauranteed to return a button with an up to date
+            // relay, so no need to call rb.updateRelay again here.
             rb.updateText();
         }
     }
