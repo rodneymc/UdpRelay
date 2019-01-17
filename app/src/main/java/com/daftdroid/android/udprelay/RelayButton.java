@@ -2,32 +2,40 @@ package com.daftdroid.android.udprelay;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.support.v7.widget.AppCompatButton;
+import android.view.View;
+import android.widget.Button;
 
 import java.io.IOException;
 import java.util.List;
 
 
-public class RelayButton extends AppCompatButton {
+public class RelayButton implements View.OnClickListener {
 
     private Relay relay;
     private final RelaySpec spec;
     private final Context context;
+    private final Button button;
 
     public RelayButton(Context c, RelaySpec spec) {
-        super(c);
+
         this.spec = spec;
-        setText(spec.getName());
         this.context = c;
+
+        button = new Button(context);
+
+
+        button.setText(spec.getName());
 
         updateRelay();
 
         if (relay != null) {
             updateText();
         }
+
+        button.setOnClickListener(this);
     }
 
-    public void click() {
+    public void onClick(View v) {
         try {
 
             if (relay == null) {
@@ -38,11 +46,11 @@ public class RelayButton extends AppCompatButton {
                 relay.stopRelay();
                 NetworkService.wakeup();
                 relay = null;
-                setText(spec.getName());
-                setTextColor(Color.BLACK);
+                button.setText(spec.getName());
+                button.setTextColor(Color.BLACK);
             }
         } catch (IOException e) {
-            setText(e.getLocalizedMessage()); // TODO
+            button.setText(e.getLocalizedMessage()); // TODO
         }
     }
     public void updateText() {
@@ -70,17 +78,20 @@ public class RelayButton extends AppCompatButton {
     }
 
     private void setError(int severity, final String msg) {
-        setText(spec.getName() + " [" + msg + "]");
+        button.setText(spec.getName() + " [" + msg + "]");
 
         if (severity == Relay.ERROR_HARD) {
-            setTextColor(Color.RED);
+            button.setTextColor(Color.RED);
         } else if (severity == Relay.ERROR_SOFT) {
-            setTextColor(Color.YELLOW);
+            button.setTextColor(Color.YELLOW);
         } else {
-            setTextColor(Color.BLACK);
+            button.setTextColor(Color.BLACK);
         }
     }
 
+    public Button getButton() {
+        return button;
+    }
     public Relay getRelay() {
         return relay;
     }

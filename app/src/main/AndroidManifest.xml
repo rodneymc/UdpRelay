@@ -26,13 +26,12 @@ This file is part of UdpRelay.
      TODO permission for foreground service - required by later API version -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.daftdroid.android.udprelay">
+        package="com.daftdroid.android.udprelay">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application android:allowBackup="true"
         android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -47,5 +46,4 @@ This file is part of UdpRelay.
             android:exported="false"/>
 
     </application>
-
 </manifest>

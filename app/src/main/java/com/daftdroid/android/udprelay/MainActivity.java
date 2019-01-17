@@ -19,18 +19,20 @@ This file is part of UdpRelay.
 
 package com.daftdroid.android.udprelay;
 
+import android.app.Activity;
 import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.Button;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+public class MainActivity extends Activity {
 
     private Relay outRelay, inRelay;
 
@@ -58,21 +60,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             addRelay(rs);
         }
     }
-    @Override
-    public void onClick(View v) {
-         RelayButton b = (RelayButton) v;
-         b.click();
-    }
 
     private void addRelay(RelaySpec rSpec)
     {
         RelayButton myButton = new RelayButton(this, rSpec);
         relays.add (myButton);
-        myButton.setOnClickListener(this);
 
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
-        ll.addView(myButton, lp);
+        ll.addView(myButton.getButton(), lp);
     }
 
     public RelayButton getRelayButton(int id) {

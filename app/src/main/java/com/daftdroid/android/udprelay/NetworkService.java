@@ -7,7 +7,6 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.support.v4.content.LocalBroadcastManager;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -16,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class NetworkService extends IntentService {
 
