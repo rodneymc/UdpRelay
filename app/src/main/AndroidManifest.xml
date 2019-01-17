@@ -26,7 +26,7 @@ This file is part of UdpRelay.
      TODO permission for foreground service - required by later API version -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.daftdroid.simpleapps.udprelay">
+    package="com.daftdroid.android.udprelay">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <application

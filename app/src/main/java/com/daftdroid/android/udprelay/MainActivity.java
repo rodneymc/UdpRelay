@@ -17,9 +17,8 @@ This file is part of UdpRelay.
     along with UdpRelay.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.daftdroid.simpleapps.udprelay;
+package com.daftdroid.android.udprelay;
 
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;

@@ -1,4 +1,4 @@
-package com.daftdroid.simpleapps.udprelay;
+package com.daftdroid.android.udprelay;
 
 import android.app.IntentService;
 import android.app.Notification;
@@ -20,9 +20,9 @@ import java.util.Set;
 public class NetworkService extends IntentService {
 
     public static final String BROADCAST_ACTION =
-            "com.daftdroid.simpleapps.udprelay.NETSERVICE_BROADCAST";
+            "com.daftdroid.android.udprelay.NETSERVICE_BROADCAST";
     public static final String BROADCAST_RLYNUM =
-            "com.daftdroid.simpleapps.udprelay.NETSERVICE_RLYNUM";
+            "com.daftdroid.android.udprelay.NETSERVICE_RLYNUM";
 
 
     /**

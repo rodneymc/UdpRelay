@@ -17,7 +17,7 @@ This file is part of UdpRelay.
     along with UdpRelay.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.daftdroid.simpleapps.udprelay;
+package com.daftdroid.android.udprelay;
 
 import java.io.IOException;
 import java.net.BindException;

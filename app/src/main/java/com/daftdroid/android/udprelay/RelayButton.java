@@ -1,8 +1,7 @@
-package com.daftdroid.simpleapps.udprelay;
+package com.daftdroid.android.udprelay;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.os.Handler;
 import android.support.v7.widget.AppCompatButton;
 
 import java.io.IOException;

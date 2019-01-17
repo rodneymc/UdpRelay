@@ -1,4 +1,4 @@
-package com.daftdroid.simpleapps.udprelay;
+package com.daftdroid.android.udprelay;
 
 import org.junit.Test;
 
