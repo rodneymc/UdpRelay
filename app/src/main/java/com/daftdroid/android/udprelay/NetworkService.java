@@ -188,6 +188,7 @@ public class NetworkService extends IntentService {
                 if (r.softError()) {
                     new ErrorCountdown(this, r).run();
                 } else {
+                    r.stopRelay();
                     broadcastStatus(r, Relay.ERROR_HARD, "Error");
                 }
             }

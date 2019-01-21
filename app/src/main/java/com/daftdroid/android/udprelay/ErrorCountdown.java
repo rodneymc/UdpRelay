@@ -33,6 +33,11 @@ public class ErrorCountdown extends Thread {
         try {
             // To restart a relay, we create a replacement from it
             replacement = new Relay(relay);
+
+            // Now "stop" the old one, which will allow it to be GCd
+            // TODO this is not intuitive whats going on here
+            relay.stopRelay();
+
         } catch (IOException e) {
             // We don't expect an IO exception to actually occur?
             service.broadcastStatus(relay, Relay.ERROR_HARD, "BUG");

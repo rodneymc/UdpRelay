@@ -83,7 +83,7 @@ public class RelayButton implements View.OnClickListener {
         if (severity == Relay.ERROR_HARD) {
             button.setTextColor(Color.RED);
         } else if (severity == Relay.ERROR_SOFT) {
-            button.setTextColor(Color.YELLOW);
+            button.setTextColor(0xffffa500);
         } else {
             button.setTextColor(Color.BLACK);
         }
