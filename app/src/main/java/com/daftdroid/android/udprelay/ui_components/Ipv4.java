@@ -10,11 +10,31 @@ import com.daftdroid.android.udprelay.R;
 public class Ipv4 {
 
     private final View view;
+    private final View focusLast;
 
-    public Ipv4(View view) {
+    public Ipv4(View view, View focusPrevious) {
         this.view = view;
 
+        EditText[] ipBoxes = getIpBoxes();
+
+        focusLast = ipBoxes[0];
+
+        if (focusPrevious != null) {
+            focusPrevious.setNextFocusForwardId(ipBoxes[3].getId());
+        }
+
+        View boxToRight = null;
+
         for (EditText e: getIpBoxes()) {
+
+            // Link the focus chain throughout the 4 boxes and, if supplied the previous
+            // view passed into the constructor. Note that the loop runs right to left
+            if (boxToRight != null) {
+                e.setNextFocusForwardId(boxToRight.getId());
+            }
+
+            boxToRight = e; // for next time round the loop
+
             e.addTextChangedListener(new EditTextChangedListener(e) {
                 private boolean recursion;
 
@@ -54,6 +74,7 @@ public class Ipv4 {
             // by setting it back to what it was before.
 
             txt = txt.substring(0, dotindex) + txt.substring(dotindex+1, len);
+            len -= 1;
         }
 
         // Now validate
@@ -74,8 +95,8 @@ public class Ipv4 {
 
             target.setBackgroundColor(Color.WHITE);
 
-            if (moveNext) {
-                moveToNextFocus();
+            if (moveNext || len == 3) {
+                moveToNextFocus(target);
             }
         }
 
@@ -96,7 +117,15 @@ public class Ipv4 {
         return e;
     }
 
-    private void moveToNextFocus() {
-        // TODO
+    private void moveToNextFocus(EditText target) {
+        System.err.println(target.getNextFocusForwardId());
+        View next = view.getRootView().findViewById(target.getNextFocusForwardId());
+        if (next != null)
+            next.requestFocus();
+
+    }
+
+    public View getFocusLast() {
+        return focusLast;
     }
 }

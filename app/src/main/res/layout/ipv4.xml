@@ -19,6 +19,8 @@
         android:layout_weight="1"
         android:width="50sp"
         android:gravity="center"
+        android:imeOptions="actionNext"
+        android:digits="0123456789."
         android:inputType="number" />
 
     <TextView
@@ -36,6 +38,8 @@
         android:layout_weight="1"
         android:width="50sp"
         android:gravity="center"
+        android:imeOptions="actionNext"
+        android:digits="0123456789."
         android:inputType="number" />
 
     <TextView
@@ -53,6 +57,8 @@
         android:layout_weight="1"
         android:width="50sp"
         android:gravity="center"
+        android:imeOptions="actionNext"
+        android:digits="0123456789."
         android:inputType="number" />
 
     <TextView
@@ -70,5 +76,7 @@
         android:layout_weight="1"
         android:width="50sp"
         android:gravity="center"
+        android:digits="0123456789."
+        android:imeOptions="actionNext"
         android:inputType="number" />
 </LinearLayout>

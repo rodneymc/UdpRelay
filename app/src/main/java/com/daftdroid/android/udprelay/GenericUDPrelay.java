@@ -21,10 +21,11 @@ public class GenericUDPrelay extends Activity {
 
         vg = findViewById(R.id.chanAip);
         v = inflater.inflate(R.layout.ipv4, vg);
-        new Ipv4(v);
+        Ipv4 chanAIP = new Ipv4(v, null);
 
         vg = findViewById(R.id.chanBip);
         v = inflater.inflate(R.layout.ipv4, vg);
+        Ipv4 chanBIP = new Ipv4(v, chanAIP.getFocusLast());
 
         //ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         //LinearLayout ll = (LinearLayout) vg;
