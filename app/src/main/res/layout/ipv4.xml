@@ -18,6 +18,7 @@
         android:width="50sp"
         android:gravity="center"
         android:imeOptions="actionNext"
+        android:maxLines="1"
         android:digits="0123456789."
         android:inputType="number" />
 
@@ -35,6 +36,7 @@
         android:width="50sp"
         android:gravity="center"
         android:imeOptions="actionNext"
+        android:maxLines="1"
         android:digits="0123456789."
         android:inputType="number" />
 
@@ -52,6 +54,7 @@
         android:width="50sp"
         android:gravity="center"
         android:imeOptions="actionNext"
+        android:maxLines="1"
         android:digits="0123456789."
         android:inputType="number" />
 
@@ -68,6 +71,7 @@
         android:layout_weight="1"
         android:width="50sp"
         android:gravity="center"
+        android:maxLines="1"
         android:digits="0123456789."
         android:imeOptions="actionNext"
         android:inputType="number" />
