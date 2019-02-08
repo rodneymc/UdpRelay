@@ -16,20 +16,15 @@ public class GenericUDPrelay extends Activity {
         setContentView(R.layout.generic_udp_relay);
 
         LayoutInflater inflater = getLayoutInflater();
-        ViewGroup vg;
-        View v;
+        ViewGroup placeHolder;
+        ViewGroup inflated;
 
-        vg = findViewById(R.id.chanAip);
-        v = inflater.inflate(R.layout.ipv4, vg);
-        Ipv4 chanAIP = new Ipv4(v, null);
+        placeHolder = findViewById(R.id.chanAip);
+        inflated = (ViewGroup) inflater.inflate(R.layout.ipv4, placeHolder);
+        Ipv4 chanAIP = new Ipv4(inflated, null);
 
-        vg = findViewById(R.id.chanBip);
-        v = inflater.inflate(R.layout.ipv4, vg);
-        Ipv4 chanBIP = new Ipv4(v, chanAIP.getFocusLast());
-
-        //ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        //LinearLayout ll = (LinearLayout) vg;
-        //ll.addView(v, lp);
-
+        placeHolder = findViewById(R.id.chanBip);
+        inflated = (ViewGroup) inflater.inflate(R.layout.ipv4, placeHolder);
+        Ipv4 chanBIP = new Ipv4(inflated, chanAIP.getFocusLast());
     }
 }

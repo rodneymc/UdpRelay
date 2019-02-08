@@ -3,29 +3,32 @@ package com.daftdroid.android.udprelay.ui_components;
 import android.graphics.Color;
 import android.text.Editable;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 
 import com.daftdroid.android.udprelay.R;
 
+import androidx.core.view.ViewCompat;
+
 public class Ipv4 {
 
-    private final View view;
+    private final ViewGroup viewGroup;
     private final View focusLast;
 
-    public Ipv4(View view, View focusPrevious) {
-        this.view = view;
+    public Ipv4(ViewGroup viewGroup, View focusPrevious) {
+        this.viewGroup = viewGroup;
 
         EditText[] ipBoxes = getIpBoxes();
 
         focusLast = ipBoxes[0];
 
-        if (focusPrevious != null) {
-            focusPrevious.setNextFocusForwardId(ipBoxes[3].getId());
-        }
-
         View boxToRight = null;
 
         for (EditText e: getIpBoxes()) {
+
+            // Assign view IDs, needed for focus navigation.
+            e.setId(ViewCompat.generateViewId());
+
 
             // Link the focus chain throughout the 4 boxes and, if supplied the previous
             // view passed into the constructor. Note that the loop runs right to left
@@ -49,6 +52,11 @@ public class Ipv4 {
                 }
             });
         }
+
+        if (focusPrevious != null) {
+            focusPrevious.setNextFocusForwardId(ipBoxes[3].getId());
+        }
+
     }
 
     private void ipByteEdited(EditText target) {
@@ -109,17 +117,19 @@ public class Ipv4 {
     }
     private EditText[] getIpBoxes() {
         EditText e[] = new EditText[4];
-        e[0] = view.findViewById(R.id.IPbyte0);
-        e[1] = view.findViewById(R.id.IPbyte1);
-        e[2] = view.findViewById(R.id.IPbyte2);
-        e[3] = view.findViewById(R.id.IPbyte3);
+
+        ViewGroup childView = (ViewGroup) viewGroup.getChildAt(0);
+        e[0] = (EditText) childView.getChildAt(7);
+        e[1] = (EditText) childView.getChildAt(5);
+        e[2] = (EditText) childView.getChildAt(3);
+        e[3] = (EditText) childView.getChildAt(1);
 
         return e;
     }
 
     private void moveToNextFocus(EditText target) {
         System.err.println(target.getNextFocusForwardId());
-        View next = view.getRootView().findViewById(target.getNextFocusForwardId());
+        View next = target.getRootView().findViewById(target.getNextFocusForwardId());
         if (next != null)
             next.requestFocus();
 
