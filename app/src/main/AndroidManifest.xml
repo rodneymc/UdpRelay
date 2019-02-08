@@ -42,6 +42,9 @@ This file is part of UdpRelay.
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".GenericUDPrelay"/>
+
         <service android:name=".NetworkService"
             android:exported="false"/>
 

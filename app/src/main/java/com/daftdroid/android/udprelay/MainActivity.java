@@ -20,6 +20,7 @@ This file is part of UdpRelay.
 package com.daftdroid.android.udprelay;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
@@ -33,8 +34,6 @@ import java.util.List;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MainActivity extends Activity {
-
-    private Relay outRelay, inRelay;
 
     private final List<RelayButton> relays = new ArrayList<RelayButton>();
 
@@ -50,6 +49,11 @@ public class MainActivity extends Activity {
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new NetServiceBroadcastReceiver(this),
                 new IntentFilter(NetworkService.BROADCAST_ACTION));
+
+
+        Intent intent = new Intent(this, GenericUDPrelay.class);
+        startActivity(intent);
+
 
         // TODO using the demo configs, do something better than this, but if you want to get
         // going you can edit the demo configs to fit your system
