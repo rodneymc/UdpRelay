@@ -6,8 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
-import com.daftdroid.android.udprelay.R;
-
 import androidx.core.view.ViewCompat;
 
 public class Ipv4 extends UiComponent {
@@ -61,7 +59,6 @@ public class Ipv4 extends UiComponent {
         boolean moveNext = false;
         int len = txt.length();
         final int origlen = len;
-
 
         /* Handle the user putting a dot in. We need to get rid of it, but it depends,
           where they put it.
@@ -132,9 +129,6 @@ public class Ipv4 extends UiComponent {
         target.getText().replace(0, origlen, txt, 0, len);
     }
 
-    private void portEdited(EditText target) {
-
-    }
     private EditText[] getIpBoxes() {
         EditText e[] = new EditText[4];
 
