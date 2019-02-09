@@ -60,26 +60,49 @@ public class Ipv4 extends UiComponent {
         String txt = target.getText().toString();
         boolean moveNext = false;
         int len = txt.length();
+        final int origlen = len;
 
-        if (txt.endsWith(".")) {
-            if (len == 1) {
-                // The user entered just a dot on its own. Disallow this.
-                txt = "";
-                len = 0;
-            }
-            else {
-                moveNext = true;
-                txt = txt.substring(0, txt.length() - 1); // Strip the trailing dot
-            }
-        }
 
+        /* Handle the user putting a dot in. We need to get rid of it, but it depends,
+          where they put it.
+         */
         int dotindex;
         if ((dotindex = txt.indexOf(".")) >= 0) {
-            // The user tried to put a dot in the middle of the number, disallow this
-            // by setting it back to what it was before.
 
-            txt = txt.substring(0, dotindex) + txt.substring(dotindex+1, len);
-            len -= 1;
+            if (dotindex == 0) {
+                /*  Dot is at the beginning. Get rid of it. If there are any more characters, keep
+                    them
+                 */
+                if (len == 1) {
+                    /* The dot was the only thing, string is now to be made empty */
+                    txt = "";
+                    len = 0;
+                } else {
+                    /* Just strip the first char (the dot) */
+                    txt = txt.substring(1);
+                    len -= 1;
+                }
+            } else if (dotindex == 1) {
+                /* The dot is the second character of three. Two possibilities, a 3
+                   character string eg 2.3 (invalid - remove the dot), or a 2 character
+                   string (2.) - valid, remove the dot and advance to the next byte window
+                 */
+                if (len == 3) {
+                    txt = new String(new char[] {txt.charAt(0),txt.charAt(2)});
+                    len -= 1;
+                } else {
+                    // Just the first character
+                    txt = new String(new char[] {txt.charAt(0)});
+                    len = 1;
+                    moveNext = true; // because the dot's at the end
+                }
+            } else { // must be 2
+                // The user has entered 23. ie a two digit byte value which is valid. Strip the
+                // dot and move on.
+                txt = txt.substring(0,2);
+                len = 2;
+                moveNext = true;
+            }
         }
 
         // Now validate
@@ -106,7 +129,7 @@ public class Ipv4 extends UiComponent {
         }
 
         // Update with any changes we made
-        target.getText().replace(0, len, txt);
+        target.getText().replace(0, origlen, txt, 0, len);
     }
 
     private void portEdited(EditText target) {
