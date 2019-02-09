@@ -1,6 +1,7 @@
 package com.daftdroid.android.udprelay.ui_components;
 
 import android.view.View;
+import android.widget.EditText;
 
 public abstract class UiComponent {
 
@@ -22,4 +23,11 @@ public abstract class UiComponent {
             getFocusLast().setNextFocusForwardId(nextId);
         }
     }
-}
+
+    protected void moveToNextFocus(View target) {
+        View next = target.getRootView().findViewById(target.getNextFocusForwardId());
+        if (next != null)
+            next.requestFocus();
+    }
+
+    }

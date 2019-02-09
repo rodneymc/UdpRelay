@@ -124,14 +124,6 @@ public class Ipv4 extends UiComponent {
         return e;
     }
 
-    private void moveToNextFocus(EditText target) {
-        System.err.println(target.getNextFocusForwardId());
-        View next = target.getRootView().findViewById(target.getNextFocusForwardId());
-        if (next != null)
-            next.requestFocus();
-
-    }
-
     @Override
     public View getFocusLast() {
         return focusLast;
