@@ -10,17 +10,19 @@ import com.daftdroid.android.udprelay.R;
 
 import androidx.core.view.ViewCompat;
 
-public class Ipv4 {
+public class Ipv4 extends UiComponent {
 
     private final ViewGroup viewGroup;
     private final View focusLast;
+    private final View focusFirst;
 
-    public Ipv4(ViewGroup viewGroup, View focusPrevious) {
+    public Ipv4(ViewGroup viewGroup) {
         this.viewGroup = viewGroup;
 
         EditText[] ipBoxes = getIpBoxes();
 
         focusLast = ipBoxes[0];
+        focusFirst = ipBoxes[3];
 
         View boxToRight = null;
 
@@ -30,8 +32,8 @@ public class Ipv4 {
             e.setId(ViewCompat.generateViewId());
 
 
-            // Link the focus chain throughout the 4 boxes and, if supplied the previous
-            // view passed into the constructor. Note that the loop runs right to left
+            // Link the focus chain throughout the 4 boxes and.
+            // Note that the loop runs right to left
             if (boxToRight != null) {
                 e.setNextFocusForwardId(boxToRight.getId());
             }
@@ -52,11 +54,6 @@ public class Ipv4 {
                 }
             });
         }
-
-        if (focusPrevious != null) {
-            focusPrevious.setNextFocusForwardId(ipBoxes[3].getId());
-        }
-
     }
 
     private void ipByteEdited(EditText target) {
@@ -135,7 +132,12 @@ public class Ipv4 {
 
     }
 
+    @Override
     public View getFocusLast() {
         return focusLast;
+    }
+    @Override
+    public View getFocusFirst() {
+        return focusFirst;
     }
 }
