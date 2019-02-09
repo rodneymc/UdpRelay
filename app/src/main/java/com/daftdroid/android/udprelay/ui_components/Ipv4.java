@@ -4,27 +4,32 @@ import android.graphics.Color;
 import android.text.Editable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.core.view.ViewCompat;
 
 public class Ipv4 extends UiComponent {
 
     private final ViewGroup viewGroup;
+    private final EditText[] ipBoxes = new EditText[4];
     private final View focusLast;
     private final View focusFirst;
+    private CheckBox checkBox;
 
     public Ipv4(ViewGroup viewGroup) {
         this.viewGroup = viewGroup;
 
-        EditText[] ipBoxes = getIpBoxes();
+        findChildElements();
 
         focusLast = ipBoxes[0];
         focusFirst = ipBoxes[3];
 
         View boxToRight = null;
 
-        for (EditText e: getIpBoxes()) {
+        for (EditText e: ipBoxes) {
 
             // Assign view IDs, needed for focus navigation.
             e.setId(ViewCompat.generateViewId());
@@ -52,6 +57,13 @@ public class Ipv4 extends UiComponent {
                 }
             });
         }
+
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                checkBoxChanged();
+            }
+        });
     }
 
     private void ipByteEdited(EditText target) {
@@ -94,7 +106,7 @@ public class Ipv4 extends UiComponent {
                     moveNext = true; // because the dot's at the end
                 }
             } else { // must be 2
-                // The user has entered 23. ie a two digit byte value which is valid. Strip the
+                // The user has entered eg 23. ie a two digit byte value which is valid. Strip the
                 // dot and move on.
                 txt = txt.substring(0,2);
                 len = 2;
@@ -129,16 +141,88 @@ public class Ipv4 extends UiComponent {
         target.getText().replace(0, origlen, txt, 0, len);
     }
 
-    private EditText[] getIpBoxes() {
-        EditText e[] = new EditText[4];
+    private void findChildElements() {
 
         ViewGroup childView = (ViewGroup) viewGroup.getChildAt(0);
-        e[0] = (EditText) childView.getChildAt(7);
-        e[1] = (EditText) childView.getChildAt(5);
-        e[2] = (EditText) childView.getChildAt(3);
-        e[3] = (EditText) childView.getChildAt(1);
+        ipBoxes[0] = (EditText) childView.getChildAt(7);
+        ipBoxes[1] = (EditText) childView.getChildAt(5);
+        ipBoxes[2] = (EditText) childView.getChildAt(3);
+        ipBoxes[3] = (EditText) childView.getChildAt(1);
+        checkBox = (CheckBox) childView.getChildAt(8);
+    }
 
-        return e;
+    private void checkBoxChanged() {
+        if (checkBox.isChecked()) {
+            for (TextView v: ipBoxes) {
+                v.setBackgroundColor(Color.GRAY);
+                v.setTextColor(Color.GRAY);
+            }
+        } else {
+            for (EditText v: ipBoxes) {
+                ipByteEdited(v);
+            }
+        }
+    }
+
+    public String getIpAddress() {
+        if (checkBox.isChecked()) {
+            // ADDR_ANY. When specifying a remote address, means literally accept from ANY
+            // (the other end must initiate the "connection". When specifying a local address,
+            // means bind to all.
+            return "0.0.0.0";
+        } else {
+            return ipBoxes[3].getText() + "." + ipBoxes[2] + "." + ipBoxes[1] + "." + ipBoxes[0];
+        }
+
+    }
+    public boolean setIpAddress(String ipv4Addr) {
+
+        if (ipv4Addr == null) {
+            return false;
+        }
+        String[] split = ipv4Addr.split(".");
+
+        if (split == null || split.length != 4) {
+            return false;
+        }
+
+        int byteVals[] = new int[4];
+        try {
+            for (int i = 0; i < 4; i ++) {
+                int val = Integer.parseInt(split[i]);
+
+                if (val < 0 || val > 255) {
+                    return false;
+                }
+
+                byteVals[i] = val;
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        // If we got here, we got a valid IP address string
+        int total = 0;
+        for (int i = 0; i < 4; i++) {
+            // The split will have caused byteVals[0] to contain the MSbyte
+            ipBoxes[3-i].setText(Integer.toString(byteVals[i]));
+            total += byteVals[i]; // Detect any non-zero byte val
+        }
+
+        if (total == 0) {
+            // The value was "0.0.0.0"
+            checkBox.setChecked(true);
+        } else {
+            checkBox.setChecked(false);
+        }
+        checkBoxChanged();
+
+        return true;
+    }
+
+    public void setADDR_ANYcheckboxText(String s) {
+        // What does the caller want to call ADDR_ANY (eg "all", "ephemeral", "any"...)
+        checkBox.setText(s);
     }
 
     @Override
