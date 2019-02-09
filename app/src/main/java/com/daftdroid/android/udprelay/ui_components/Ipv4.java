@@ -15,6 +15,7 @@ public class Ipv4 extends UiComponent {
 
     private final ViewGroup viewGroup;
     private final EditText[] ipBoxes = new EditText[4];
+    private EditText portBox;
     private final View focusLast;
     private final View focusFirst;
     private CheckBox checkBox;
@@ -24,10 +25,11 @@ public class Ipv4 extends UiComponent {
 
         findChildElements();
 
-        focusLast = ipBoxes[0];
+        focusLast = portBox;
         focusFirst = ipBoxes[3];
 
-        View boxToRight = null;
+        portBox.setId(ViewCompat.generateViewId());
+        View boxToRight = portBox;
 
         for (EditText e: ipBoxes) {
 
@@ -62,6 +64,13 @@ public class Ipv4 extends UiComponent {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 checkBoxChanged();
+            }
+        });
+
+        portBox.addTextChangedListener(new EditTextChangedListener(portBox) {
+            @Override
+            public void onTextChanged(EditText target, Editable s) {
+                portBoxChanged();
             }
         });
     }
@@ -144,11 +153,14 @@ public class Ipv4 extends UiComponent {
     private void findChildElements() {
 
         ViewGroup childView = (ViewGroup) viewGroup.getChildAt(0);
-        ipBoxes[0] = (EditText) childView.getChildAt(7);
-        ipBoxes[1] = (EditText) childView.getChildAt(5);
-        ipBoxes[2] = (EditText) childView.getChildAt(3);
-        ipBoxes[3] = (EditText) childView.getChildAt(1);
-        checkBox = (CheckBox) childView.getChildAt(8);
+        ViewGroup layout0 = (ViewGroup) childView.getChildAt(0);
+        ViewGroup layout1 = (ViewGroup) childView.getChildAt(1);
+        ipBoxes[0] = (EditText) layout0.getChildAt(7);
+        ipBoxes[1] = (EditText) layout0.getChildAt(5);
+        ipBoxes[2] = (EditText) layout0.getChildAt(3);
+        ipBoxes[3] = (EditText) layout0.getChildAt(1);
+        checkBox = (CheckBox) layout0.getChildAt(8);
+        portBox = (EditText) layout1.getChildAt(1);
     }
 
     private void checkBoxChanged() {
@@ -223,6 +235,17 @@ public class Ipv4 extends UiComponent {
     public void setADDR_ANYcheckboxText(String s) {
         // What does the caller want to call ADDR_ANY (eg "all", "ephemeral", "any"...)
         checkBox.setText(s);
+    }
+
+    private void portBoxChanged() {
+        String txt = portBox.getText().toString();
+        int val = Integer.parseInt(txt); // Digits only in this box, so should be safe
+
+        if (val > 65535) {
+            portBox.setBackgroundColor(Color.YELLOW);
+        } else {
+            portBox.setBackgroundColor(Color.WHITE);
+        }
     }
 
     @Override
