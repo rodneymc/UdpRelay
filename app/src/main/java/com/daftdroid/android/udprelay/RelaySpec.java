@@ -2,9 +2,13 @@ package com.daftdroid.android.udprelay;
 
 import android.os.Build;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class RelaySpec {
+public class RelaySpec implements Serializable {
+
+    static final long serialVersionUID = 1L;
+
     public static final String EPHEMERAL_IP = null;
     public static final int EPHEMERAL_PORT = 0;
     public static final int WELL_KNOWN_PORT_OPENVPN = 1194;
