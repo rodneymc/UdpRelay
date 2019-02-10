@@ -1,5 +1,6 @@
 package com.daftdroid.android.udprelay.ui_components;
 
+import android.app.Activity;
 import android.graphics.Color;
 import android.text.Editable;
 import android.view.View;
@@ -9,20 +10,21 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.daftdroid.android.udprelay.R;
+
 import androidx.core.view.ViewCompat;
 
 public class Ipv4 extends UiComponent {
 
-    private final ViewGroup viewGroup;
     private final EditText[] ipBoxes = new EditText[4];
     private EditText portBox;
     private final View focusLast;
     private final View focusFirst;
     private CheckBox checkBox;
 
-    public Ipv4(ViewGroup viewGroup) {
-        this.viewGroup = viewGroup;
+    public Ipv4(Activity act, int placeHolderId) {
 
+        super(act, placeHolderId, R.layout.ipv4);
         findChildElements();
 
         focusLast = portBox;
@@ -152,7 +154,7 @@ public class Ipv4 extends UiComponent {
 
     private void findChildElements() {
 
-        ViewGroup childView = (ViewGroup) viewGroup.getChildAt(0);
+        ViewGroup childView = (ViewGroup) getViewGroup().getChildAt(0);
         ViewGroup layout0 = (ViewGroup) childView.getChildAt(0);
         ViewGroup layout1 = (ViewGroup) childView.getChildAt(1);
         ipBoxes[0] = (EditText) layout0.getChildAt(7);
@@ -256,4 +258,5 @@ public class Ipv4 extends UiComponent {
     public View getFocusFirst() {
         return focusFirst;
     }
+
 }
