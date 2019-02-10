@@ -46,16 +46,17 @@ public class Storage {
     public List<VpnSpecification> loadAll() {
         List list = new ArrayList<VpnSpecification>();
 
-        String[] filenames = specDirectory.list();
+    File[] files = specDirectory.listFiles();
 
-        for (String fname: filenames) {
+        for (File file: files) {
             try {
-                int id = Integer.parseInt(fname, 16);
+                String fname = file.getName();
+                System.out.println(fname);
+                int id = (int) Long.parseLong(file.getName(), 16);
             } catch (NumberFormatException e) {
                 continue; //Ignore invalid filenames
             }
 
-            File file = new File(specDirectory, fname);
             try (
                     FileInputStream fis = new FileInputStream(file);
                     ObjectInputStream in = new ObjectInputStream(fis)

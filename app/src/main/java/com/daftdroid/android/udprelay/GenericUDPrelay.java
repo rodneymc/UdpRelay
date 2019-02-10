@@ -1,6 +1,7 @@
 package com.daftdroid.android.udprelay;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -72,6 +73,9 @@ public class GenericUDPrelay extends Activity {
 
                 storage.save(spec);
 
+                Intent retData = new Intent();
+                retData.putExtra(VpnSpecification.INTENT_ID, finalid);
+                setResult(RESULT_OK, retData);
                 finish();
             }
         });

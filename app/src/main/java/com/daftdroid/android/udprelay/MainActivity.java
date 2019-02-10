@@ -36,6 +36,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 public class MainActivity extends Activity {
 
     private final List<RelayButton> relays = new ArrayList<RelayButton>();
+    private Storage storage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,20 +51,11 @@ public class MainActivity extends Activity {
                 new NetServiceBroadcastReceiver(this),
                 new IntentFilter(NetworkService.BROADCAST_ACTION));
 
-        // TODO using the demo configs, do something better than this, but if you want to get
-        // going you can edit the demo configs to fit your system
-
-
-        for (RelaySpec rs: RelaySpec.exampleRelays)
-        {
-            addRelay(rs);
-        }
-
-        Storage storage = new Storage(getFilesDir());
+        storage = new Storage(getFilesDir());
         List<VpnSpecification> vpns = storage.loadAll();
 
         for (VpnSpecification vpn: vpns) {
-            addRelay(vpn.getRelaySpec());
+            addRelay(vpn);
         }
 
         Button button = new Button(this);
@@ -83,14 +75,29 @@ public class MainActivity extends Activity {
 
     }
 
-    private void addRelay(RelaySpec rSpec)
-    {
-        RelayButton myButton = new RelayButton(this, rSpec);
-        relays.add (myButton);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
-        ll.addView(myButton.getButton(), lp);
+        if (resultCode == RESULT_OK) {
+
+            VpnSpecification newSpec = storage.load(data.getIntExtra(VpnSpecification.INTENT_ID, 0));
+
+            if (newSpec != null) {
+                for (RelayButton rb : relays) {
+                    if (rb.getSpecId() == requestCode) {
+                        rb.updateSpec(newSpec);
+                        return;
+                    }
+                }
+                // If we didn't have one to update, it must be a new one.
+                addRelay(newSpec);
+            }
+        }
+    }
+    private void addRelay(VpnSpecification spec)
+    {
+        RelayButton myButton = new RelayButton(this, R.id.layoutmain, spec);
+        relays.add (myButton);
     }
 
     public RelayButton getRelayButton(int id) {

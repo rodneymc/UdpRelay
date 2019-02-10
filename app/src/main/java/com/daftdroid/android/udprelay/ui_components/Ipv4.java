@@ -183,7 +183,7 @@ public class Ipv4 extends UiComponent {
             // ADDR_ANY. When specifying a remote address, means literally accept from ANY
             // (the other end must initiate the "connection". When specifying a local address,
             // means bind to all.
-            return "0.0.0.0";
+            return null;
         } else {
             return ipBoxes[3].getText() +
                     "." + ipBoxes[2].getText() +
@@ -195,7 +195,14 @@ public class Ipv4 extends UiComponent {
     public boolean setIpAddress(String ipv4Addr) {
 
         if (ipv4Addr == null) {
-            return false;
+            // in Java null is ADDR_ANY
+
+            for (int i = 0; i < 4; i ++) {
+                ipBoxes[0].setText("");
+                checkBox.setChecked(true);
+            }
+
+            return true;
         }
         String[] split = ipv4Addr.split("\\.");
 
