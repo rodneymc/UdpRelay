@@ -20,6 +20,7 @@ This file is part of UdpRelay.
 package com.daftdroid.android.udprelay;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
@@ -33,8 +34,6 @@ import java.util.List;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MainActivity extends Activity {
-
-    private Relay outRelay, inRelay;
 
     private final List<RelayButton> relays = new ArrayList<RelayButton>();
 
@@ -59,6 +58,29 @@ public class MainActivity extends Activity {
         {
             addRelay(rs);
         }
+
+        Storage storage = new Storage(getFilesDir());
+        List<VpnSpecification> vpns = storage.loadAll();
+
+        for (VpnSpecification vpn: vpns) {
+            addRelay(vpn.getRelaySpec());
+        }
+
+        Button button = new Button(this);
+        button.setText("ADD [APLHA]");
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, GenericUDPrelay.class);
+                //intent.putExtra(VpnSpecification.INTENT_ID, 1);
+                startActivityForResult(intent, 1);
+            }
+        });
+
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
+        ll.addView(button, lp);
+
     }
 
     private void addRelay(RelaySpec rSpec)
