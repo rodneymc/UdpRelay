@@ -4,9 +4,12 @@ import android.content.Context;
 
 import java.io.Serializable;
 
+
 public class VpnSpecification implements Serializable {
 
     static final long serialVersionUID = 1L;
+    public static final String INTENT_ID =
+            VpnSpecification.class.getCanonicalName().concat(".ID");
 
     private int id;
 

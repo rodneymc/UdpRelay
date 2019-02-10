@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 public class Storage {
     private final File specDirectory;
@@ -69,9 +69,36 @@ public class Storage {
         }
         return list;
     }
+    public VpnSpecification load(int id) {
+        String fname = Integer.toHexString(id);
+
+        File file = new File(specDirectory, fname);
+        try (
+                FileInputStream fis = new FileInputStream(file);
+                ObjectInputStream in = new ObjectInputStream(fis)
+        ) {
+            VpnSpecification spec = (VpnSpecification) in.readObject();
+            return spec;
+        } catch (IOException | ClassNotFoundException | ClassCastException e) {
+            error = e; //TODO report me!
+            return null;
+        }
+    }
 
     public void delete(VpnSpecification spec) {
         File f = new File(specDirectory, Integer.toHexString(spec.getId()));
         f.delete();
+    }
+
+    // Pick a random int id that represents a file that doesn't exist, and not zero.
+    public int getNewSpecId() {
+        Random random = new Random();
+
+        while (true) {
+            int id = random.nextInt();
+            if (id != 0 && ! new File(specDirectory, Integer.toHexString(id)).exists()) {
+                return id;
+            }
+        }
     }
 }

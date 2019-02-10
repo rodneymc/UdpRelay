@@ -50,8 +50,8 @@ public class MainActivity extends Activity {
                 new NetServiceBroadcastReceiver(this),
                 new IntentFilter(NetworkService.BROADCAST_ACTION));
 
-
         Intent intent = new Intent(this, GenericUDPrelay.class);
+        intent.putExtra(VpnSpecification.INTENT_ID, 1);
         startActivity(intent);
 
 
@@ -62,6 +62,13 @@ public class MainActivity extends Activity {
         for (RelaySpec rs: RelaySpec.exampleRelays)
         {
             addRelay(rs);
+        }
+
+        Storage storage = new Storage(getFilesDir());
+        List<VpnSpecification> vpns = storage.loadAll();
+
+        for (VpnSpecification vpn: vpns) {
+            addRelay(vpn.getRelaySpec());
         }
     }
 

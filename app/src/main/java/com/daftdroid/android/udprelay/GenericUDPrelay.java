@@ -13,12 +13,38 @@ public class GenericUDPrelay extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        final Storage storage = new Storage(getFilesDir());
+
         setContentView(R.layout.generic_udp_relay);
 
         Ipv4 chanAloc = new Ipv4(this, R.id.chanALocip);
         Ipv4 chanArem = new Ipv4(this, R.id.chanARemip);
         Ipv4 chanBloc = new Ipv4(this, R.id.chanBLocip);
         Ipv4 chanBrem = new Ipv4(this, R.id.chanBRemip);
+
+        int id = getIntent().getIntExtra(VpnSpecification.INTENT_ID, 0);
+        final VpnSpecification loadedSpec;
+
+        loadedSpec = storage.load(id);
+
+        if (loadedSpec != null) {
+            RelaySpec rly = loadedSpec.getRelaySpec();
+
+            chanAloc.setIpAddress(rly.getChanALocalIP());
+            chanAloc.setPort(rly.getChanALocalPort());
+            chanArem.setIpAddress(rly.getChanARemoteIP());
+            chanArem.setPort(rly.getChanARemotePort());
+            chanBloc.setIpAddress(rly.getChanBLocalIP());
+            chanBloc.setPort(rly.getChanBLocalPort());
+            chanBrem.setIpAddress(rly.getChanBRemoteIP());
+            chanBrem.setPort(rly.getChanBRemotePort());
+        }
+        else {
+            id = storage.getNewSpecId();
+        }
+
+        final int finalid = id;
 
         chanBrem.linkFocusForward(chanBloc).
                 linkFocusForward(chanArem).
@@ -29,7 +55,7 @@ public class GenericUDPrelay extends Activity {
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String vpnName = "ui_test1";
+                String vpnName = "ui_test"+finalid;
                 RelaySpec rly = new RelaySpec (vpnName,
                         chanAloc.getIpAddress(), chanAloc.getPort(),
                         chanArem.getIpAddress(), chanArem.getPort(),
@@ -37,10 +63,12 @@ public class GenericUDPrelay extends Activity {
                         chanBrem.getIpAddress(), chanBrem.getPort());
                 VpnSpecification spec = new VpnSpecification();
                 spec.setTitle(vpnName);
-                spec.setId(1); // TODO
+                spec.setId(finalid);
                 spec.setSpec(rly);
 
-                new Storage(getFilesDir()).save(spec);
+                storage.save(spec);
+
+                finish();
             }
         });
     }
