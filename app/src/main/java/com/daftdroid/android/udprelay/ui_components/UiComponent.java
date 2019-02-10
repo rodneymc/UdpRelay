@@ -13,7 +13,9 @@ public abstract class UiComponent {
     public UiComponent(Activity act, int placerHolderId, int componentResource) {
         ViewGroup vg = act.findViewById(placerHolderId);
         LayoutInflater inflater = act.getLayoutInflater();
-        viewGroup = (ViewGroup) inflater.inflate(componentResource, vg);
+        inflater.inflate(componentResource, vg);
+
+        viewGroup = (ViewGroup) vg.getChildAt(vg.getChildCount() -1);
     }
     public abstract View getFocusFirst();
     public abstract View getFocusLast();

@@ -154,9 +154,9 @@ public class Ipv4 extends UiComponent {
 
     private void findChildElements() {
 
-        ViewGroup childView = (ViewGroup) getViewGroup().getChildAt(0);
-        ViewGroup layout0 = (ViewGroup) childView.getChildAt(0);
-        ViewGroup layout1 = (ViewGroup) childView.getChildAt(1);
+        ViewGroup viewGroup = (ViewGroup) getViewGroup();
+        ViewGroup layout0 = (ViewGroup) viewGroup.getChildAt(0);
+        ViewGroup layout1 = (ViewGroup) viewGroup.getChildAt(1);
         ipBoxes[0] = (EditText) layout0.getChildAt(7);
         ipBoxes[1] = (EditText) layout0.getChildAt(5);
         ipBoxes[2] = (EditText) layout0.getChildAt(3);
