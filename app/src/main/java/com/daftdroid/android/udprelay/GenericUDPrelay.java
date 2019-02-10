@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 
 import com.daftdroid.android.udprelay.ui_components.Ipv4;
 
@@ -39,6 +40,8 @@ public class GenericUDPrelay extends Activity {
             chanBloc.setPort(rly.getChanBLocalPort());
             chanBrem.setIpAddress(rly.getChanBRemoteIP());
             chanBrem.setPort(rly.getChanBRemotePort());
+
+            ((EditText) findViewById(R.id.configTitle)).setText(loadedSpec.getTitle());
         }
         else {
             id = storage.getNewSpecId();
@@ -55,14 +58,15 @@ public class GenericUDPrelay extends Activity {
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String vpnName = "ui_test"+finalid;
-                RelaySpec rly = new RelaySpec (vpnName,
+                String name = ((EditText) findViewById(R.id.configTitle)).getText().toString();
+
+                RelaySpec rly = new RelaySpec (name,
                         chanAloc.getIpAddress(), chanAloc.getPort(),
                         chanArem.getIpAddress(), chanArem.getPort(),
                         chanBloc.getIpAddress(), chanBloc.getPort(),
                         chanBrem.getIpAddress(), chanBrem.getPort());
                 VpnSpecification spec = new VpnSpecification();
-                spec.setTitle(vpnName);
+                spec.setTitle(name);
                 spec.setId(finalid);
                 spec.setSpec(rly);
 
