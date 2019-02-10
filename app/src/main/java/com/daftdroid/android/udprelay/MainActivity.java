@@ -50,11 +50,6 @@ public class MainActivity extends Activity {
                 new NetServiceBroadcastReceiver(this),
                 new IntentFilter(NetworkService.BROADCAST_ACTION));
 
-        Intent intent = new Intent(this, GenericUDPrelay.class);
-        intent.putExtra(VpnSpecification.INTENT_ID, 1);
-        startActivity(intent);
-
-
         // TODO using the demo configs, do something better than this, but if you want to get
         // going you can edit the demo configs to fit your system
 
@@ -70,6 +65,22 @@ public class MainActivity extends Activity {
         for (VpnSpecification vpn: vpns) {
             addRelay(vpn.getRelaySpec());
         }
+
+        Button button = new Button(this);
+        button.setText("ADD [APLHA]");
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, GenericUDPrelay.class);
+                //intent.putExtra(VpnSpecification.INTENT_ID, 1);
+                startActivityForResult(intent, 1);
+            }
+        });
+
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
+        ll.addView(button, lp);
+
     }
 
     private void addRelay(RelaySpec rSpec)
