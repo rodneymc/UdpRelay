@@ -185,7 +185,10 @@ public class Ipv4 extends UiComponent {
             // means bind to all.
             return "0.0.0.0";
         } else {
-            return ipBoxes[3].getText() + "." + ipBoxes[2] + "." + ipBoxes[1] + "." + ipBoxes[0];
+            return ipBoxes[3].getText() +
+                    "." + ipBoxes[2].getText() +
+                    "." + ipBoxes[1].getText() +
+                    "." + ipBoxes[0].getText();
         }
 
     }
@@ -194,7 +197,7 @@ public class Ipv4 extends UiComponent {
         if (ipv4Addr == null) {
             return false;
         }
-        String[] split = ipv4Addr.split(".");
+        String[] split = ipv4Addr.split("\\.");
 
         if (split == null || split.length != 4) {
             return false;
