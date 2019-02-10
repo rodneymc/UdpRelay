@@ -247,6 +247,10 @@ public class Ipv4 extends UiComponent {
             portBox.setBackgroundColor(Color.YELLOW);
         } else {
             portBox.setBackgroundColor(Color.WHITE);
+
+            if (txt.length() == 5) {
+                moveToNextFocus(portBox);
+            }
         }
     }
 
