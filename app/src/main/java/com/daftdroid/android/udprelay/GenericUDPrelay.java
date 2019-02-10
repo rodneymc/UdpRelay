@@ -3,7 +3,9 @@ package com.daftdroid.android.udprelay;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.daftdroid.android.udprelay.ui_components.Ipv4;
 
@@ -21,5 +23,25 @@ public class GenericUDPrelay extends Activity {
         chanBrem.linkFocusForward(chanBloc).
                 linkFocusForward(chanArem).
                 linkFocusForward(chanAloc);
+
+        Button b = findViewById(R.id.okbutton);
+
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String vpnName = "ui_test1";
+                RelaySpec rly = new RelaySpec (vpnName,
+                        chanAloc.getIpAddress(), chanAloc.getPort(),
+                        chanArem.getIpAddress(), chanArem.getPort(),
+                        chanBloc.getIpAddress(), chanBloc.getPort(),
+                        chanBrem.getIpAddress(), chanBrem.getPort());
+                VpnSpecification spec = new VpnSpecification();
+                spec.setTitle(vpnName);
+                spec.setId(1); // TODO
+                spec.setSpec(rly);
+
+                new Storage(getFilesDir()).save(spec);
+            }
+        });
     }
 }

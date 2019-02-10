@@ -241,7 +241,7 @@ public class Ipv4 extends UiComponent {
 
     private void portBoxChanged() {
         String txt = portBox.getText().toString();
-        int val = Integer.parseInt(txt); // Digits only in this box, so should be safe
+        int val = (txt.length() == 0) ? 0 : Integer.parseInt(txt); // Digits only in this box, so should be safe
 
         if (val > 65535) {
             portBox.setBackgroundColor(Color.YELLOW);
@@ -252,6 +252,13 @@ public class Ipv4 extends UiComponent {
                 moveToNextFocus(portBox);
             }
         }
+    }
+
+    public int getPort() {
+        String txt = portBox.getText().toString();
+        int val = (txt.length() == 0) ? 0 : Integer.parseInt(txt); // Digits only in this box, so should be safe
+
+        return val;
     }
 
     @Override
