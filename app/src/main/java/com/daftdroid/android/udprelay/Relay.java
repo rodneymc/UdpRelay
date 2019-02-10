@@ -268,8 +268,11 @@ class Relay
 
     public void close()
     {
-        channelA.selectKey.cancel();
-        channelB.selectKey.cancel();
+        if (channelA.selectKey != null)
+            channelA.selectKey.cancel();
+
+        if (channelB.selectKey != null)
+            channelB.selectKey.cancel();
 
         try {channelA.channel.close();} catch (IOException e) {}
         try {channelB.channel.close();} catch (IOException e) {}
