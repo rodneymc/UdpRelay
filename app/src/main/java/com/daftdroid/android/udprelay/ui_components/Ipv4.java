@@ -229,7 +229,6 @@ public class Ipv4 extends UiComponent {
         } else {
             checkBox.setChecked(false);
         }
-        checkBoxChanged();
 
         return true;
     }
@@ -259,6 +258,9 @@ public class Ipv4 extends UiComponent {
         int val = (txt.length() == 0) ? 0 : Integer.parseInt(txt); // Digits only in this box, so should be safe
 
         return val;
+    }
+    public void setPort(int port) {
+        portBox.setText(Integer.toString(port));
     }
 
     @Override
