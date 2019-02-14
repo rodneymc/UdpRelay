@@ -81,7 +81,7 @@ class Relay
 
         if (spec.getChanARemoteIP() == null && spec.getChanALocalIP() == null
                 || spec.getChanBLocalIP() == null && spec.getChanBRemoteIP() == null) {
-            throw new IllegalArgumentException("At least one end of the link must be well known");
+            throw new IOException("At least one end of the link must specified");
         }
         uniqueId = getNextUniqueId();
     }

@@ -136,15 +136,8 @@ public class RelayButton extends UiComponent {
      public Relay getRelay() {
         return relay;
     }
+
     // TODO not sure if we need to return something meaningful here?
-    @Override
-    public View getFocusFirst() {
-        return null;
-    }
-    @Override
-    public View getFocusLast() {
-        return null;
-    }
     public int getSpecId() {
         return spec.getId();
     }
