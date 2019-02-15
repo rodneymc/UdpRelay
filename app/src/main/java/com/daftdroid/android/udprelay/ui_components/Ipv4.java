@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import com.daftdroid.android.udprelay.R;
 
@@ -22,7 +21,7 @@ public class Ipv4 extends UiComponent {
     private CheckBox portCheckBox;
     private boolean anyIP; // True for ADDR_ANY ie 0.0.0.0 or the "any" box ticked
     private boolean anyPort;
-    private boolean blockTxtUpdateListener;
+    private boolean blockListeners;
 
     public Ipv4(Activity act, int placeHolderId) {
 
@@ -55,7 +54,7 @@ public class Ipv4 extends UiComponent {
             e.addTextChangedListener(new EditTextChangedListener(e) {
                 @Override
                 public void onTextChanged(EditText target, Editable s) {
-                    if (!blockTxtUpdateListener) {
+                    if (!blockListeners) {
                         ipByteEdited(target, false);
                     }
                 }
@@ -65,14 +64,16 @@ public class Ipv4 extends UiComponent {
         checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                checkBoxChanged();
+                if (!blockListeners) {
+                    checkBoxChanged();
+                }
             }
         });
 
         portBox.addTextChangedListener(new EditTextChangedListener(portBox) {
             @Override
             public void onTextChanged(EditText target, Editable s) {
-                if (!blockTxtUpdateListener) {
+                if (!blockListeners) {
                     portBoxChanged(false);
                 }
             }
@@ -81,7 +82,9 @@ public class Ipv4 extends UiComponent {
         portCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                portCheckBoxChanged();
+                if (!blockListeners) {
+                    portCheckBoxChanged();
+                }
             }
         });
     }
@@ -170,9 +173,9 @@ public class Ipv4 extends UiComponent {
             }
 
             // Update with any changes we made
-            blockTxtUpdateListener = true; // block recursion
+            blockListeners = true; // block recursion
             target.getText().replace(0, origlen, txt, 0, len);
-            blockTxtUpdateListener = false;
+            blockListeners = false;
         }
     }
 
@@ -227,9 +230,10 @@ public class Ipv4 extends UiComponent {
 
     public String getIpAddress() {
         if (checkBox.isChecked()) {
-            // ADDR_ANY. When specifying a remote address, means literally accept from ANY
+            // When specifying a remote address, means literally accept from ANY
             // (the other end must initiate the "connection". When specifying a local address,
-            // means bind to all.
+            // means auto select based on the route to the host. Explicit 0.0.0.0 means
+            // bind to all.
             return null;
         } else {
             return ipBoxes[3].getText() +
@@ -249,12 +253,12 @@ public class Ipv4 extends UiComponent {
     }
     public void putRawUserInputState(String state) {
         String[] split = state.split("\\.", 6);
-        blockTxtUpdateListener = true;
+        blockListeners = true;
         ipBoxes[3].setText(split[0]);
         ipBoxes[2].setText(split[1]);
         ipBoxes[1].setText(split[2]);
         ipBoxes[0].setText(split[3]);
-        blockTxtUpdateListener = false; // setting the checkbox will cause the update
+        blockListeners = false; // setting the checkbox will cause the update
         checkBox.setChecked(split[4].equals("y"));
         portBox.setText(split[5]);
     }
@@ -297,39 +301,31 @@ public class Ipv4 extends UiComponent {
         }
 
         if (!error) {
-            int total = 0;
 
             // Don't allow the listener to run while we are updating the individual boxes,
             // they will all be updated when the checkbox is updated.
 
-            blockTxtUpdateListener = true;
+            blockListeners = true;
 
-            for (int i = 0; i < 4; i++) {
-                // The split will have caused byteVals[0] to contain the MSbyte
-                ipBoxes[3-i].setText(Integer.toString(byteVals[i]));
-                total += byteVals[i]; // Detect any non-zero byte val
+            if (split == null) {
+                for (int i = 0; i < 4; i ++) {
+                    // Fill with blanks
+                    ipBoxes[i].setText("");
+                }
+                checkBox.setChecked(true);
             }
 
-            blockTxtUpdateListener = false;
-
-
-            if (total == 0) {
-                // The value was "0.0.0.0"
-
-                if (!anyIP) {
-                    checkBox.setChecked(true);
-                } else {
-                    // checked already but we need to run the whole update thing
-                    checkBoxChanged();
+            else {
+                for (int i = 0; i < 4; i++) {
+                    // The split will have caused byteVals[0] to contain the MSbyte
+                    ipBoxes[3-i].setText(Integer.toString(byteVals[i]));
                 }
-            } else {
-                if (anyIP) {
-                    checkBox.setChecked(false);
-                } else {
-                    // unchecked already but we need to run the whole update thing
-                    checkBoxChanged();
-                }
+                checkBox.setChecked(false);
             }
+
+            blockListeners = false;
+
+            checkBoxChanged();
         }
 
         return !error;
@@ -381,16 +377,16 @@ public class Ipv4 extends UiComponent {
     }
     public void setPort(int port) {
         if (port > 0) {
-            blockTxtUpdateListener = true;
+            blockListeners = true;
             portBox.setText(Integer.toString(port));
-            blockTxtUpdateListener = false;
+            blockListeners = false;
 
             portCheckBox.setChecked(false);
         } else {
             // Port == 0 means any
-            blockTxtUpdateListener = true;
+            blockListeners = true;
             portBox.setText("");
-            blockTxtUpdateListener = false;
+            blockListeners = false;
 
             portCheckBox.setChecked(true);
         }
