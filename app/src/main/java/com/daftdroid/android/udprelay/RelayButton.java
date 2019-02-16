@@ -104,7 +104,7 @@ public class RelayButton extends UiComponent {
         // See if we can find a relay running already that matches the spec
         if (runningList != null) {
             for (Relay r: runningList) {
-                if (r.getSpec().equals(spec)) {
+                if (r.getSpec().equals(spec.getRelaySpec())) {
                     relay = r;
                     break;
                 }
