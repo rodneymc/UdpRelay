@@ -2,27 +2,60 @@
 
 <LinearLayout android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    xmlns:style="http://schemas.android.com/tools"
     android:orientation="vertical"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <LinearLayout android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+    <LinearLayout style="@style/ipRow">
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            style="@style/rowStartTxt"
             android:text="IP" />
 
         <EditText
             android:maxLength="3"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:width="50sp"
             android:gravity="center"
             android:imeOptions="actionNext"
             android:maxLines="1"
+            android:digits="0123456789."
+            style="@style/ipbox"
+            android:id="@+id/ip3"
+            android:inputType="number" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="."
+            />
+        <EditText
+            android:maxLength="3"
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:imeOptions="actionNext"
+            android:maxLines="1"
+            style="@style/ipbox"
+            android:digits="0123456789."
+            android:id="@+id/ip2"
+            android:inputType="number" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="."
+            />
+        <EditText
+            android:maxLength="3"
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:imeOptions="actionNext"
+            android:maxLines="1"
+            android:id="@+id/ip1"
+            style="@style/ipbox"
             android:digits="0123456789."
             android:inputType="number" />
 
@@ -35,49 +68,13 @@
         <EditText
             android:maxLength="3"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:width="50sp"
-            android:gravity="center"
-            android:imeOptions="actionNext"
-            android:maxLines="1"
-            android:digits="0123456789."
-            android:inputType="number" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="."
-            />
-        <EditText
-            android:maxLength="3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:width="50sp"
-            android:gravity="center"
-            android:imeOptions="actionNext"
-            android:maxLines="1"
-            android:digits="0123456789."
-            android:inputType="number" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="."
-            />
-        <EditText
-            android:maxLength="3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:width="50sp"
             android:gravity="center"
             android:maxLines="1"
+            style="@style/ipbox"
             android:digits="0123456789."
             android:imeOptions="actionNext"
+            android:id="@+id/ip0"
             android:inputType="number" />
 
         <CheckBox
@@ -87,15 +84,11 @@
             android:layout_weight="1"
             android:text="Any" />
     </LinearLayout>
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+
+    <LinearLayout style="@style/ipRow">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            style="@style/rowStartTxt"
             android:text="Port" />
 
         <EditText
@@ -104,10 +97,13 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:ems="5"
-            android:gravity="left"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="5dp"
             android:maxLines="1"
             android:digits="0123456789"
+            style="@style/portbox"
             android:imeOptions="actionNext"
+            android:id="@+id/port"
             android:inputType="number" />
 
         <CheckBox

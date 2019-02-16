@@ -1,7 +1,5 @@
 package com.daftdroid.android.udprelay.ui_components;
 
-import android.app.Activity;
-import android.graphics.Color;
 import android.text.Editable;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +11,7 @@ import com.daftdroid.android.udprelay.R;
 
 import androidx.core.view.ViewCompat;
 
-public class Ipv4 extends UiComponent {
+public class Ipv4 extends UiComponentViewGroup {
 
     private final EditText[] ipBoxes = new EditText[4];
     private EditText portBox;
@@ -21,19 +19,18 @@ public class Ipv4 extends UiComponent {
     private CheckBox portCheckBox;
     private boolean anyIP; // True for ADDR_ANY ie 0.0.0.0 or the "any" box ticked
     private boolean anyPort;
-    private boolean blockListeners;
+    private boolean saveable;
 
-    public Ipv4(Activity act, int placeHolderId) {
+    public Ipv4(ViewGroup viewGroup) {
 
-        super(act, placeHolderId, R.layout.ipv4);
+        super(viewGroup);
         findChildElements();
+        enumerateChildren();
 
         focusLast = portBox;
         focusFirst = ipBoxes[3];
 
-        portBox.setId(ViewCompat.generateViewId());
-        checkBox.setId(ViewCompat.generateViewId());
-        portCheckBox.setId(ViewCompat.generateViewId());
+
         View boxToRight = portBox;
         focusLast = portBox;
 
@@ -93,11 +90,7 @@ public class Ipv4 extends UiComponent {
 
         if (anyIpUpdated) {
             if (anyIP) {
-                target.setBackgroundColor(Color.GRAY);
-                target.setTextColor(Color.GRAY);
-                target.setEnabled(false);
-            } else {
-                target.setEnabled(true);
+                editTextStatus(target, EditTextStatus.DISABLED);
             }
         }
 
@@ -105,8 +98,10 @@ public class Ipv4 extends UiComponent {
         if (!anyIP) {
             String txt = target.getText().toString();
             boolean moveNext = false;
+            final int origlen = txt.length();;
+            txt = txt.replace("?","");
             int len = txt.length();
-            final int origlen = len;
+            boolean questionMarkDetected = len != origlen;
 
             /* Handle the user putting a dot in. We need to get rid of it, but it depends,
               where they put it.
@@ -159,13 +154,13 @@ public class Ipv4 extends UiComponent {
             }
 
             if (val > 255) {
-                target.setBackgroundColor(Color.YELLOW);
+                editTextStatus(target, EditTextStatus.SOFT_ERROR);
             } else {
                 // This byte is valid, in the sense that it is at least in the range 0-255,
                 // though actually the last byte shouldn't be zero but that's more about the
                 // address value as a hole being invalid.
 
-                target.setBackgroundColor(Color.WHITE);
+                editTextStatus(target, EditTextStatus.NORMAL);
 
                 if (moveNext || len == 3) {
                     moveToNextFocus(target);
@@ -176,21 +171,23 @@ public class Ipv4 extends UiComponent {
             blockListeners = true; // block recursion
             target.getText().replace(0, origlen, txt, 0, len);
             blockListeners = false;
+
+            if (questionMarkDetected) {
+                target.setSelection(1);
+            }
         }
     }
 
     private void findChildElements() {
 
         ViewGroup viewGroup = getViewGroup();
-        ViewGroup layout0 = (ViewGroup) viewGroup.getChildAt(0);
-        ViewGroup layout1 = (ViewGroup) viewGroup.getChildAt(1);
-        ipBoxes[0] = (EditText) layout0.getChildAt(7);
-        ipBoxes[1] = (EditText) layout0.getChildAt(5);
-        ipBoxes[2] = (EditText) layout0.getChildAt(3);
-        ipBoxes[3] = (EditText) layout0.getChildAt(1);
-        checkBox = (CheckBox) layout0.getChildAt(8);
-        portBox = (EditText) layout1.getChildAt(1);
-        portCheckBox = (CheckBox) layout1.getChildAt(2);
+        ipBoxes[0] = viewGroup.findViewById(R.id.ip0);
+        ipBoxes[1] = viewGroup.findViewById(R.id.ip1);
+        ipBoxes[2] = viewGroup.findViewById(R.id.ip2);
+        ipBoxes[3] = viewGroup.findViewById(R.id.ip3);
+        checkBox = viewGroup.findViewById(R.id.checkBox);
+        portBox = viewGroup.findViewById(R.id.port);
+        portCheckBox = viewGroup.findViewById(R.id.portCheckBox);
     }
 
     private void checkBoxChanged() {
@@ -243,24 +240,29 @@ public class Ipv4 extends UiComponent {
         }
 
     }
+    @Override
     public String getRawUserInputState() {
         return ipBoxes[3].getText() +
                 "." + ipBoxes[2].getText() +
                 "." + ipBoxes[1].getText() +
                 "." + ipBoxes[0].getText() +
                 "." + (checkBox.isChecked() ? 'y' : 'n') +
-                "." + portBox.getText();
+                "." + portBox.getText() +
+                "." + (portCheckBox.isChecked() ? 'y' : 'n');
     }
+    @Override
     public void putRawUserInputState(String state) {
-        String[] split = state.split("\\.", 6);
+        // TODO handle question marks on rotation
+        String[] split = state.split("\\.", 7);
         blockListeners = true;
-        ipBoxes[3].setText(split[0]);
-        ipBoxes[2].setText(split[1]);
-        ipBoxes[1].setText(split[2]);
-        ipBoxes[0].setText(split[3]);
+        ipBoxes[3].setText(split[0].replace("?", ""));
+        ipBoxes[2].setText(split[1].replace("?", ""));
+        ipBoxes[1].setText(split[2].replace("?", ""));
+        ipBoxes[0].setText(split[3].replace("?", ""));
+        portBox.setText(split[5].replace("?", ""));
         blockListeners = false; // setting the checkbox will cause the update
         checkBox.setChecked(split[4].equals("y"));
-        portBox.setText(split[5]);
+        portCheckBox.setChecked(split[6].equals("y"));
     }
     public boolean setIpAddress(String ipv4Addr) {
 
@@ -339,27 +341,35 @@ public class Ipv4 extends UiComponent {
     private void portBoxChanged(boolean chkBoxChanged) {
         if (chkBoxChanged) {
             if (anyPort) {
-                portBox.setBackgroundColor(Color.GRAY);
-                portBox.setTextColor(Color.GRAY);
-                portBox.setEnabled(false);
-            } else {
-                portBox.setTextColor(Color.BLACK);
-                portBox.setEnabled(true);
+              editTextStatus(portBox, EditTextStatus.DISABLED);
+
             }
 
         }
         if (!anyPort) {
-            String txt = portBox.getText().toString();
-            int val = (txt.length() == 0) ? 9999999 : Integer.parseInt(txt); // Digits only in this box, so should be safe
+            String txt_orig = portBox.getText().toString();
+            String txt = txt_orig.replace("?", "");
+            int origlen = txt_orig.length();
+            int len = txt.length();
+            int val = (len == 0) ? 9999999 : Integer.parseInt(txt); // Digits only in this box, so should be safe
 
             if (val > 65535) {
-                portBox.setBackgroundColor(Color.YELLOW);
+                editTextStatus(portBox, EditTextStatus.SOFT_ERROR);
             } else {
-                portBox.setBackgroundColor(Color.WHITE);
+                editTextStatus(portBox, EditTextStatus.NORMAL); 
 
                 if (txt.length() == 5) {
                     moveToNextFocus(portBox);
                 }
+            }
+
+            // See if a ? was stripped
+
+            if (len != origlen) {
+                blockListeners = true;
+                portBox.getText().replace(0, origlen, txt, 0, len);
+                blockListeners = false;
+                portBox.setSelection(1);
             }
         }
     }
@@ -392,30 +402,46 @@ public class Ipv4 extends UiComponent {
         }
     }
     // Validate whether the config is saveable, not whether the IP configuratio
-    // is actually sane.
-    public boolean isSaveable() {
-        try {
-            if (!anyIP) {
-                // We need a number 0-255 in all boxes
-                for (int i = 0; i < 4; i ++) {
-                    int byteval = Integer.parseInt(ipBoxes[i].getText().toString());
-                    if (byteval > 255) {
-                        return false;
-                    }
-                }
-            }
-            if (!anyPort) {
-                Integer port = Integer.parseInt(portBox.getText().toString());
+    // is actually sane. Flags up errors as hard which makes them more visible in the ui.
+    // Do in reverse order, so the focus ends up on the first errored item.
+    public void validate() {
+        saveable = true;
+
+        if (!anyPort) {
+            String txt = portBox.getText().toString();
+            // If it contains a ?, we already flagged it as error
+            if (txt.equals("?")) {
+                saveable = false;
+            } else {
+                int port = !txt.equals("") ? Integer.parseInt(txt) : 99999;
                 if (port > 65535) {
-                    return false;
+                    saveable = false;
+                    editTextStatus(portBox, EditTextStatus.HARD_ERROR);
                 }
             }
-        } catch (NumberFormatException e) {
-            // blank fields
-            return false;
         }
 
-        return true;
+        if (!anyIP) {
+            // We need a number 0-255 in all boxes
+            for (int i = 0; i < 4; i ++) {
+                String txt = ipBoxes[i].getText().toString();
+
+                // If it contains a ?, we already flagged it as error
+                if (txt.equals("?")) {
+                    saveable = false;
+                    continue;
+                }
+
+                int byteval = !txt.equals("") ? Integer.parseInt(txt) : 99999;
+                if (byteval > 255) {
+                    saveable = false;
+                    editTextStatus(ipBoxes[i], EditTextStatus.HARD_ERROR);
+                }
+            }
+        }
+    }
+    public boolean isSaveable() {
+        return saveable;
     }
     // Update the status when blank, to be called if setIpAddress or setPort are not
     // called after creation.

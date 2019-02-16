@@ -9,11 +9,12 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.daftdroid.android.udprelay.ui_components.UiComponent;
+import com.daftdroid.android.udprelay.ui_components.UiComponentViewGroup;
 
 import java.io.IOException;
 import java.util.List;
 
-public class RelayButton extends UiComponent {
+public class RelayButton {
 
     private Relay relay;
     private VpnSpecification spec;
@@ -22,12 +23,14 @@ public class RelayButton extends UiComponent {
 
     public RelayButton(Activity act, int placeHolderId, VpnSpecification spec) {
 
-        super(act, placeHolderId, R.layout.relaybutton);
+        final ViewGroup viewGroup;
+
+        viewGroup = UiComponentViewGroup.doInflate(act, placeHolderId, R.layout.relaybutton);
         this.context = act;
 
         this.spec = spec;
 
-        startStopButton = (Button) getViewGroup().findViewById(R.id.rly_main_button);
+        startStopButton = (Button) viewGroup.findViewById(R.id.rly_main_button);
 
         updateStartStopButton();
         updateRelay();
@@ -43,20 +46,19 @@ public class RelayButton extends UiComponent {
             }
         });
 
-        Button b = (Button) getViewGroup().findViewById(R.id.delete_rly);
+        Button b = (Button) viewGroup.findViewById(R.id.delete_rly);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // TODO don't allow while relay is running
 
-                ViewGroup thisView = getViewGroup();
-                ((ViewGroup) thisView.getParent()).removeView(thisView);
+                ((ViewGroup) viewGroup.getParent()).removeView(viewGroup);
 
                 new Storage(act.getFilesDir()).delete(spec);
             }
         });
 
-        b = (Button) getViewGroup().findViewById(R.id.edit_rly);
+        b = (Button) viewGroup.findViewById(R.id.edit_rly);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

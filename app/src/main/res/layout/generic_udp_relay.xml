@@ -3,12 +3,7 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Generic Relay - ALPHA" />
-    <LinearLayout
+     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -32,62 +27,51 @@
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/chanTitle"
                 android:text="Channel A" />
+
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/chanSubTitle"
                 android:text="Local" />
 
-            <LinearLayout
+            <include
                 android:id="@+id/chanALocip"
-                 android:orientation="vertical"
-                 android:layout_width="match_parent"
-                 android:layout_height="wrap_content"/>
+                layout="@layout/ipv4" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/chanSubTitle"
                 android:text="Remote" />
 
-            <LinearLayout
+            <include
                 android:id="@+id/chanARemip"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                layout="@layout/ipv4" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/chanTitle"
                 android:text="Channel B" />
+
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/chanSubTitle"
                 android:text="Local" />
 
-            <LinearLayout
+            <include
                 android:id="@+id/chanBLocip"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                layout="@layout/ipv4" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/chanSubTitle"
                 android:text="Remote" />
 
-            <LinearLayout
+            <include
                 android:id="@+id/chanBRemip"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                layout="@layout/ipv4" />
 
             <Button
                 android:id="@+id/okbutton"

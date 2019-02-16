@@ -1,11 +1,52 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Base.ThemeOverlay.AppCompat.Dark">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="ipbox" parent="@android:style/Widget.EditText">
+        <item name="android:textColor">#ffffff</item>
+        <item name="android:background">@drawable/ipbox</item>
+        <item name="android:layout_height">30sp</item>
+        <item name="android:height">30sp</item>
+        <item name="android:width">45sp</item>
+        <item name="android:layout_margin">1sp</item>
+    </style>
+    <style name="ipbox_error" parent="@style/ipbox">
+        <item name="android:textColor">#ff0000</item>
+        <item name="android:hint">"?"</item>
+    </style>
+
+    <style name="portbox" parent="@style/ipbox">
+        <item name="android:width">75sp</item>
+    </style>
+
+    <style name="chanTitle" parent="@android:style/Widget.TextView">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingStart">10sp</item>
+        <item name="android:paddingLeft">10sp</item>
+        <item name="android:textSize">22sp</item>
+    </style>
+    <style name="chanSubTitle" parent="@style/chanTitle">
+        <item name="android:textSize">18sp</item>
+    </style>
+    <style name="ipRow">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginLeft">10sp</item>
+        <item name="android:layout_marginStart">10sp</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+    <style name="rowStartTxt" parent="@android:style/Widget.TextView">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">2sp</item>
+        <item name="android:layout_marginRight">2sp</item>
     </style>
 
 </resources>

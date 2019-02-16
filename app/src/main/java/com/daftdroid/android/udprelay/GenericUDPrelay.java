@@ -11,11 +11,17 @@ import android.widget.EditText;
 
 import com.daftdroid.android.udprelay.ui_components.Ipv4;
 import com.daftdroid.android.udprelay.ui_components.UiComponent;
+import com.daftdroid.android.udprelay.ui_components.UiComponentView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GenericUDPrelay extends Activity {
 
     private int relayId;
     private Ipv4 chanAloc, chanArem, chanBloc, chanBrem;
+
+    private List<UiComponent> uiComponents = new ArrayList<UiComponent>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,34 +30,55 @@ public class GenericUDPrelay extends Activity {
         final Storage storage = new Storage(getFilesDir());
 
         setContentView(R.layout.generic_udp_relay);
+        setTitle("Generic UDP Relay");
+
         final Button okButton = findViewById(R.id.okbutton);
 
         final EditText titleText = findViewById(R.id.configTitle);
 
-        chanAloc = new Ipv4(this, R.id.chanALocip);
-        chanArem = new Ipv4(this, R.id.chanARemip);
-        chanBloc = new Ipv4(this, R.id.chanBLocip);
-        chanBrem = new Ipv4(this, R.id.chanBRemip);
+        UiComponent okButtonComp = new UiComponentView(okButton);
+        UiComponent titleTextComp = new UiComponentView(titleText);
+
+        chanAloc = new Ipv4(findViewById(R.id.chanALocip));
+        chanArem = new Ipv4(findViewById(R.id.chanARemip));
+        chanBloc = new Ipv4(findViewById(R.id.chanBLocip));
+        chanBrem = new Ipv4(findViewById(R.id.chanBRemip));
+
+        // Add the components in focus order
+
+        uiComponents.add(titleTextComp);
+        uiComponents.add(chanAloc);
+        uiComponents.add(chanArem);
+        uiComponents.add(chanBloc);
+        uiComponents.add(chanBrem);
+        uiComponents.add(okButtonComp);
 
         // Link the focusable items together before initialising them with data,
         // or the linking will not work. // TODO this should work though...
+        int componentCount = uiComponents.size();
 
-        new UiComponent(okButton).linkFocusForward(chanBrem).
-                linkFocusForward(chanBloc).
-                linkFocusForward(chanArem).
-                linkFocusForward(chanAloc).
-                linkFocusForward(new UiComponent(titleText));
+        for (int i = 1; i < componentCount; i ++) {
+            uiComponents.get(i).linkFocusForward(uiComponents.get(i-1));
+        }
+
 
         if (savedInstanceState != null) {
             // Restore the edited state of the config, which might not be the same
             // as the actual stored config.
 
             relayId = savedInstanceState.getInt("id");
-            chanAloc.putRawUserInputState(savedInstanceState.getString("aloc"));
-            chanBloc.putRawUserInputState(savedInstanceState.getString("bloc"));
-            chanArem.putRawUserInputState(savedInstanceState.getString("arem"));
-            chanBrem.putRawUserInputState(savedInstanceState.getString("brem"));
-            titleText.setText(savedInstanceState.getString("name"));
+            int focusParent = savedInstanceState.getInt("focusParent");
+            int focusChild = savedInstanceState.getInt("focusChild");
+
+            for (UiComponent u: uiComponents) {
+                u.putRawUserInputState(savedInstanceState.getString(Integer.toString(u.getId())));
+
+                if (u.getId() == focusParent) {
+                    u.setFocusToChild(focusChild);
+                }
+            }
+
+
 
         } else {
             // Load the saved config, if there is one
@@ -87,8 +114,21 @@ public class GenericUDPrelay extends Activity {
             @Override
             public void onClick(View v) {
 
-                if (chanAloc.isSaveable() && chanBloc.isSaveable() && chanArem.isSaveable()
-                 && chanBrem.isSaveable()) {
+                chanBrem.validate();
+                chanBloc.validate();
+                chanArem.validate();
+                chanAloc.validate();
+
+                // If there is an error, move the focus to the first errored view.
+                if (!chanAloc.isSaveable()) {
+                    chanAloc.requestFocusToErroredView();
+                } else if (!chanArem.isSaveable()) {
+                    chanArem.requestFocusToErroredView();
+                } else if (!chanBloc.isSaveable()) {
+                    chanBloc.requestFocusToErroredView();
+                } else if (!chanBrem.isSaveable()) {
+                    chanBrem.requestFocusToErroredView();
+                } else {
                     String name = ((EditText) findViewById(R.id.configTitle)).getText().toString();
 
                     RelaySpec rly = new RelaySpec(name,
@@ -113,11 +153,23 @@ public class GenericUDPrelay extends Activity {
     }
     @Override
     public void onSaveInstanceState(Bundle outState) {
+
         outState.putInt("id", relayId);
-        outState.putString("name", ((EditText) findViewById(R.id.configTitle)).getText().toString());
-        outState.putString("aloc", chanAloc.getRawUserInputState());
-        outState.putString("bloc", chanBloc.getRawUserInputState());
-        outState.putString("arem", chanArem.getRawUserInputState());
-        outState.putString("brem", chanBrem.getRawUserInputState());
+        boolean focusFound = false;
+        int focusChildIndex = -1;
+        int focusParentIndex = -1;
+
+        for (UiComponent u: uiComponents) {
+            outState.putString(Integer.toString(u.getId()), u.getRawUserInputState());
+
+            if (!focusFound && (focusChildIndex = u.getChildFocusIndex()) != -1) {
+                focusParentIndex = u.getId();
+                focusFound = true;
+            }
+        }
+
+        outState.putInt("focusParent", focusParentIndex);
+        outState.putInt("focusChild", focusChildIndex);
+
     }
 }

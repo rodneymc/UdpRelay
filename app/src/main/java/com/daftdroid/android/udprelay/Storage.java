@@ -50,9 +50,7 @@ public class Storage {
 
         for (File file: files) {
             try {
-                String fname = file.getName();
-                System.out.println(fname);
-                int id = (int) Long.parseLong(file.getName(), 16);
+                Long.parseLong(file.getName(), 16);
             } catch (NumberFormatException e) {
                 continue; //Ignore invalid filenames
             }
