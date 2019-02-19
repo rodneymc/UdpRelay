@@ -77,4 +77,10 @@ public class VpnSpecification implements Serializable, RelayConfiguration {
     public Storage getStorage() {
         return loader;
     }
+
+    public void deleteError() {
+        error = null;
+        getStorage().deleteError(this);
+    }
+
 }

@@ -83,7 +83,7 @@ public class RelayButton {
         try {
 
             if (!running()) {
-                spec.getStorage().deleteError(spec);
+                spec.deleteError();
                 relay = new Relay(spec);
                 relay.startRelay();
                 NetworkService.uiAddRelay(context, relay);
