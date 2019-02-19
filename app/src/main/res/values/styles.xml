@@ -48,5 +48,11 @@
         <item name="android:layout_marginEnd">2sp</item>
         <item name="android:layout_marginRight">2sp</item>
     </style>
-
+    <style name="rly_subbutton" parent="Widget.AppCompat.Button">
+        <item name="android:layout_width">45sp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:height">45sp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:layout_gravity">center_vertical</item>
+    </style>
 </resources>

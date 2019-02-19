@@ -20,7 +20,7 @@ public class NetServiceBroadcastReceiver extends BroadcastReceiver {
         if (rb != null) { // not sure it should ever be null..
             // Note that main.getRelayButton is gauranteed to return a button with an up to date
             // relay, so no need to call rb.updateRelay again here.
-            rb.updateText();
+            rb.updateTextAndButtons();
         }
     }
 }

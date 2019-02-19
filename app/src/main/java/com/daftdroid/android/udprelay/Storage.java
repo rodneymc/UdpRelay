@@ -13,16 +13,21 @@ import java.util.Random;
 public class Storage {
     private final File specDirectory;
     private final File ovpnDirectory;
+    private final File errorDirectory;
 
     private Throwable error;
 
-    public Storage(File dataDirectory) {
+    public Storage(File dataDirectory, File cacheDirectory) {
 
         specDirectory = new File(dataDirectory, "specs");
         specDirectory.mkdir();
 
         ovpnDirectory = new File(dataDirectory, "ovpn");
         ovpnDirectory.mkdir();
+
+        errorDirectory = new File(cacheDirectory, "err");
+        errorDirectory.mkdir();
+
     }
 
     public boolean save(VpnSpecification spec) {
@@ -40,13 +45,14 @@ public class Storage {
 
         // TODO save the VPN config
 
+        deleteError(spec);
         return true;
     }
 
     public List<VpnSpecification> loadAll() {
         List list = new ArrayList<VpnSpecification>();
 
-    File[] files = specDirectory.listFiles();
+        File[] files = specDirectory.listFiles();
 
         for (File file: files) {
             try {
@@ -60,6 +66,8 @@ public class Storage {
                     ObjectInputStream in = new ObjectInputStream(fis)
                     ) {
                 VpnSpecification spec = (VpnSpecification) in.readObject();
+                spec.setLoader(this);
+                spec.setError(loadError(spec.getId()), false);
                 list.add(spec);
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
                 error = e; //TODO report me!
@@ -77,15 +85,60 @@ public class Storage {
                 ObjectInputStream in = new ObjectInputStream(fis)
         ) {
             VpnSpecification spec = (VpnSpecification) in.readObject();
+            spec.setLoader(this);
             return spec;
         } catch (IOException | ClassNotFoundException | ClassCastException e) {
-            error = e; //TODO report me!
+            saveError(id, e);
             return null;
         }
+    }
+    public Throwable loadError(int id) {
+        String fname = Integer.toHexString(id);
+
+        File file = new File(errorDirectory, fname);
+
+        if (file.exists()) {
+            try (
+                    FileInputStream fis = new FileInputStream(file);
+                    ObjectInputStream in = new ObjectInputStream(fis)
+            ) {
+                Throwable err = (Throwable) in.readObject();
+                return err;
+            } catch (IOException | ClassNotFoundException | ClassCastException e) {
+                error = e; //TODO report me!
+                return null;
+            }
+        }
+        return null;
+    }
+    public boolean saveError(VpnSpecification s) {
+        return saveError(s.getId(), s.error());
+    }
+
+    boolean saveError(int id, Throwable error) {
+        File errfile = new File(errorDirectory, Integer.toHexString(id));
+        try (
+                FileOutputStream fos = new FileOutputStream(errfile);
+                ObjectOutputStream out = new ObjectOutputStream((fos));
+        ) {
+            out.writeObject(error);
+        } catch (IOException e2) {
+            // Well, if we couldn't save the error, it's excpetion within exception handling,
+            // not much we can do.
+            error = e2;
+            return false;
+        }
+
+        return true;
     }
 
     public void delete(VpnSpecification spec) {
         File f = new File(specDirectory, Integer.toHexString(spec.getId()));
+        f.delete();
+        deleteError(spec);
+    }
+    public void deleteError(VpnSpecification spec) {
+        File f = new File(errorDirectory, Integer.toHexString(spec.getId()));
         f.delete();
     }
 

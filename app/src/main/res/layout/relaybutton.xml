@@ -11,14 +11,20 @@
     </Button>
     <Button
         android:id="@+id/delete_rly"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:text="del">
+        android:text="@string/icon_times_circle"
+        style="@style/rly_subbutton"
+        >
     </Button>
     <Button
         android:id="@+id/edit_rly"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:text="Ed">
+        android:text="@string/icon_edit"
+        style="@style/rly_subbutton"
+        >
     </Button>
+    <Button
+        android:id="@+id/startstop_rly"
+        style="@style/rly_subbutton"
+        >
+    </Button>
+
 </LinearLayout>

@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">UDPRelay</string>
+    <string name="icon_heart">&#xf004;</string>
+    <string name="icon_edit">&#xf044;</string>
+    <string name="icon_play">&#xf144;</string>
+    <string name="icon_pause">&#xf28b;</string>
+    <string name="icon_times_circle">&#xf057;</string>
 </resources>

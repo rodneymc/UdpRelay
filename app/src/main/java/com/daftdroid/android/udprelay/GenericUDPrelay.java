@@ -27,7 +27,7 @@ public class GenericUDPrelay extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final Storage storage = new Storage(getFilesDir());
+        final Storage storage = new Storage(getFilesDir(), getCacheDir());
 
         setContentView(R.layout.generic_udp_relay);
         setTitle("Generic UDP Relay");
@@ -108,6 +108,11 @@ public class GenericUDPrelay extends Activity {
                 chanArem.initBlank();
                 chanBrem.initBlank();
             }
+
+            // Set the focus to the dummy element, to prevent the focus going somewhere annoying
+            // and / or the keyboard auto opening which is also annoying
+            findViewById(R.id.dummyfocus).requestFocus();
+
         }
 
         okButton.setOnClickListener(new View.OnClickListener() {
@@ -136,7 +141,7 @@ public class GenericUDPrelay extends Activity {
                             chanArem.getIpAddress(), chanArem.getPort(),
                             chanBloc.getIpAddress(), chanBloc.getPort(),
                             chanBrem.getIpAddress(), chanBrem.getPort());
-                    VpnSpecification spec = new VpnSpecification();
+                    VpnSpecification spec = new VpnSpecification(storage);
                     spec.setTitle(name);
                     spec.setId(relayId);
                     spec.setSpec(rly);

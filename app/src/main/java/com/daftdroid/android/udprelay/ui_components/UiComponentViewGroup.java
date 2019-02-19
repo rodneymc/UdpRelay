@@ -21,6 +21,8 @@ public abstract class UiComponentViewGroup extends UiComponent {
     protected boolean blockListeners;
     private View erroredView;
     private final ViewGroup viewGroup;
+    private final int bg_greyedOut;
+    private final int bg_normal;
 
     public static ViewGroup doInflate(Activity act, int placerHolderId, int componentResource) {
         ViewGroup vg = act.findViewById(placerHolderId);
@@ -30,10 +32,12 @@ public abstract class UiComponentViewGroup extends UiComponent {
         return  (ViewGroup) vg.getChildAt(vg.getChildCount() -1);
     }
     public UiComponentViewGroup(Activity act, int placerHolderId, int componentResource) {
-        viewGroup =  doInflate(act, placerHolderId, componentResource);
+        this (doInflate(act, placerHolderId, componentResource));
     }
     public UiComponentViewGroup(ViewGroup viewGroup) {
         this.viewGroup = viewGroup;
+        bg_greyedOut = viewGroup.getResources().getColor(R.color.colorGreyedOut);
+        bg_normal = viewGroup.getResources().getColor(R.color.colorEditBg);
     }
 
     public void requestFocusToErroredView() {
@@ -100,16 +104,19 @@ public abstract class UiComponentViewGroup extends UiComponent {
         switch (s) {
             case NORMAL:
                 TextViewCompat.setTextAppearance(e, R.style.ipbox);
+                e.setBackgroundColor(bg_normal);
                 e.setOnFocusChangeListener(null);
                 break;
 
             case SOFT_ERROR:
                 TextViewCompat.setTextAppearance(e, R.style.ipbox_error);
+                e.setBackgroundColor(bg_normal);
                 break;
             case HARD_ERROR:
 
                 erroredView = e;
                 TextViewCompat.setTextAppearance(e, R.style.ipbox_error);
+                e.setBackgroundColor(bg_normal);
 
                 // If the text is empty, we need to put a ? in it to highlight it
                 if (e.getText().toString().equals("")) {
@@ -142,7 +149,10 @@ public abstract class UiComponentViewGroup extends UiComponent {
                     e.setText("");
                     blockListeners = false;
                 }
-                // TODO
+
+                e.setTextColor(bg_greyedOut);
+                e.setBackgroundColor(bg_greyedOut);
+
                 break;
         }
 

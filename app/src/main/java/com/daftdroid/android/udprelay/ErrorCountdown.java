@@ -26,8 +26,12 @@ public class ErrorCountdown extends Thread {
             } catch (InterruptedException e) {
                 return;
             }
-        } while (--countdown > 0);
+        } while (--countdown > 0 && !relay.stopping());
 
+        if (relay.stopping()) {
+            // User or other external cancel
+            return;
+        }
         Relay replacement;
 
         try {
@@ -38,9 +42,10 @@ public class ErrorCountdown extends Thread {
             // TODO this is not intuitive whats going on here
             relay.stopRelay();
 
-        } catch (IOException e) {
+        } catch (RelayException e) {
             // We don't expect an IO exception to actually occur?
-            service.broadcastStatus(relay, Relay.ERROR_HARD, "BUG");
+            service.broadcastStatus(relay, Relay.ERROR_HARD, e.getMessage());
+            relay.saveError(e);
             return;
         }
 

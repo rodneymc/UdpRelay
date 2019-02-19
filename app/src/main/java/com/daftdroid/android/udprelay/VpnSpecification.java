@@ -5,9 +5,13 @@ import android.content.Context;
 import java.io.Serializable;
 
 
-public class VpnSpecification implements Serializable {
+public class VpnSpecification implements Serializable, RelayConfiguration {
 
     static final long serialVersionUID = 1L;
+    public VpnSpecification(Storage loader) {
+        this.loader = loader;
+    }
+
     public static final String INTENT_ID =
             VpnSpecification.class.getCanonicalName().concat(".ID");
 
@@ -25,9 +29,10 @@ public class VpnSpecification implements Serializable {
 
     private String vpn; // The common name of the hub
 
-    // So we can save error flag to non-volatile and keep track of an error condition
-    // without keeping the service active.
-    private Throwable error;
+    // Error status saved separately so we don't have to resave the whole class on error.
+    // Also so we can save an error async, if there is no activity running.
+    private transient Throwable error;
+    private transient Storage loader;
 
     public void setId(int id) {
         this.id = id;
@@ -53,10 +58,19 @@ public class VpnSpecification implements Serializable {
     public String getVpn() {
         return vpn;
     }
-    public void setError(Throwable error) {
+    public void setError(Throwable error, boolean saveNow) {
         this.error = error;
+        if (saveNow && loader != null) {
+            loader.saveError(this);
+        }
     }
     public Throwable error() {
         return error;
+    }
+    public void setLoader(Storage loader) {
+        this.loader = loader;
+    }
+    public Storage getStorage() {
+        return loader;
     }
 }

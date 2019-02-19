@@ -1,14 +1,12 @@
 package com.daftdroid.android.udprelay;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
-import com.daftdroid.android.udprelay.ui_components.UiComponent;
 import com.daftdroid.android.udprelay.ui_components.UiComponentViewGroup;
 
 import java.io.IOException;
@@ -18,10 +16,12 @@ public class RelayButton {
 
     private Relay relay;
     private VpnSpecification spec;
-    private final Button startStopButton;
-    private final Context context;
+    private final Button titleText;
+    private final MainActivity context;
+    private boolean hardError;
+    private final Button playStopButton;
 
-    public RelayButton(Activity act, int placeHolderId, VpnSpecification spec) {
+    public RelayButton(MainActivity act, int placeHolderId, VpnSpecification spec) {
 
         final ViewGroup viewGroup;
 
@@ -30,16 +30,16 @@ public class RelayButton {
 
         this.spec = spec;
 
-        startStopButton = (Button) viewGroup.findViewById(R.id.rly_main_button);
+        titleText = (Button) viewGroup.findViewById(R.id.rly_main_button);
+        playStopButton = viewGroup.findViewById(R.id.startstop_rly);
+        Typeface fontAwesome = act.getFontAwesome();
 
-        updateStartStopButton();
         updateRelay();
 
-        if (relay != null) {
-            updateText();
-        }
+        updateTextAndButtons();
 
-        startStopButton.setOnClickListener(new View.OnClickListener() {
+        playStopButton.setTypeface(fontAwesome);
+        playStopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onClickStartStop(v);
@@ -47,6 +47,7 @@ public class RelayButton {
         });
 
         Button b = (Button) viewGroup.findViewById(R.id.delete_rly);
+        b.setTypeface(fontAwesome);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -54,11 +55,12 @@ public class RelayButton {
 
                 ((ViewGroup) viewGroup.getParent()).removeView(viewGroup);
 
-                new Storage(act.getFilesDir()).delete(spec);
+                act.getStorage().delete(spec);
             }
         });
 
         b = (Button) viewGroup.findViewById(R.id.edit_rly);
+        b.setTypeface(fontAwesome);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -74,25 +76,51 @@ public class RelayButton {
     public void onClickStartStop(View v) {
         try {
 
-            if (relay == null) {
-                relay = new Relay(spec.getRelaySpec());
+            if (!running()) {
+                spec.getStorage().deleteError(spec);
+                relay = new Relay(spec);
                 relay.startRelay();
                 NetworkService.uiAddRelay(context, relay);
             } else {
                 relay.stopRelay();
                 NetworkService.wakeup();
                 relay = null;
-                startStopButton.setText(spec.getTitle());
-                startStopButton.setTextColor(Color.BLACK);
+                titleText.setText(spec.getTitle());
+                titleText.setTextColor(Color.WHITE);
             }
-        } catch (IOException e) {
-            startStopButton.setText(e.getLocalizedMessage()); // TODO
+        } catch (RelayException e) {
+            context.getStorage().saveError(spec.getId(), e);
+            setError(Relay.ERROR_HARD, e.getMessage());
         }
+        updateTextAndButtons();
     }
 
 
-    public void updateText() {
-        setError(relay.getErrorLevel(), relay.getStatusMessage());
+    public void updateTextAndButtons() {
+
+        if (relay != null) {
+            setError(relay.getErrorLevel(), relay.getStatusMessage());
+        } else {
+            // Update the error status from the storage
+            Throwable error = spec.error();
+
+            if (error == null) {
+                setError(Relay.ERROR_NONE, null);
+            } else {
+                setError(Relay.ERROR_HARD, error.getMessage());
+            }
+        }
+
+        // Update the play / pause button
+        if (running()) {
+            playStopButton.setText(context.getResources().getString(R.string.icon_pause));
+        } else {
+            playStopButton.setText(context.getResources().getString(R.string.icon_play));
+        }
+
+    }
+    private boolean running() {
+        return !(hardError || relay == null || relay.stopping());
     }
 
     /*
@@ -105,8 +133,9 @@ public class RelayButton {
         List<Relay> runningList = NetworkService.getActiveRelays();
         // See if we can find a relay running already that matches the spec
         if (runningList != null) {
+            int id = spec.getId();
             for (Relay r: runningList) {
-                if (r.getSpec().equals(spec.getRelaySpec())) {
+                if (r.getConfigId() == id) {
                     relay = r;
                     break;
                 }
@@ -116,32 +145,44 @@ public class RelayButton {
 
     public void updateSpec(VpnSpecification spec) {
         this.spec = spec;
-        updateStartStopButton();
-    }
 
-    private void updateStartStopButton() {
-        startStopButton.setText(spec.getTitle());
+        // For an update, we must stop any existing relay, the user can start a new one
+        // with the new config by pressing play.
+
+        if (relay != null) {
+            relay.stopRelay();
+            relay = null;
+        }
+        updateTextAndButtons();
     }
 
     private void setError(int severity, final String msg) {
-        startStopButton.setText(spec.getTitle() + " [" + msg + "]");
+        String title = spec.getTitle();
+
+        if (msg != null) {
+            title += " [" + msg + "]";
+        }
+        titleText.setText(title);
+
+        hardError = false;
 
         if (severity == Relay.ERROR_HARD) {
-            startStopButton.setTextColor(Color.RED);
+            titleText.setTextColor(Color.RED);
+            hardError = true;
         } else if (severity == Relay.ERROR_SOFT) {
-            startStopButton.setTextColor(0xffffa500);
+            titleText.setTextColor(0xffffa500);
         } else {
-            startStopButton.setTextColor(Color.BLACK);
+            titleText.setTextColor(Color.WHITE);
         }
-    }
-
-     public Relay getRelay() {
-        return relay;
     }
 
     // TODO not sure if we need to return something meaningful here?
     public int getSpecId() {
         return spec.getId();
+    }
+
+    public VpnSpecification getVpnSpec() {
+        return spec;
     }
 
 }

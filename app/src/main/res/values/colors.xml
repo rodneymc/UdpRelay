@@ -5,4 +5,5 @@
     <color name="colorAccent">#D81B60</color>
     <color name="colorEditBg">#252525</color>
     <color name="colorEditBorder">#222222</color>
+    <color name="colorGreyedOut">#333333</color>
 </resources>

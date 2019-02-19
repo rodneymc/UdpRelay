@@ -190,6 +190,7 @@ public class NetworkService extends IntentService {
                 } else {
                     r.stopRelay();
                     broadcastStatus(r, Relay.ERROR_HARD, "Error");
+                    r.saveError("Error", r.getError());
                 }
             }
             if (hasError || r.stopping()) {
@@ -255,7 +256,7 @@ public class NetworkService extends IntentService {
     void broadcastStatus(Relay r, int errlevel, String msg) {
 
         Intent localIntent = new Intent(BROADCAST_ACTION)
-                .putExtra(BROADCAST_RLYNUM, r.getUniqueId());
+                .putExtra(BROADCAST_RLYNUM, r.getConfigId());
 
         r.setErrorLevel(errlevel);
         r.setStatusMessage(msg);

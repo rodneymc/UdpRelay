@@ -42,9 +42,8 @@ class Relay
         WRITE_ERROR_UNKNOWN, DESTINATION_UNREACHABLE};
     private ErrorState errorState = ErrorState.NONE;
     private RelayChannel errorChannel; // The channel that errored.
-    private final int uniqueId;
-
-    private static int nextUniqueId;
+    private final int configId;
+    private final Storage storage; // For error save.
 
     public static final int ERROR_SOFT = 1;
     public static final int ERROR_HARD = 2;
@@ -65,13 +64,27 @@ class Relay
     private final RelayChannel channelA = new RelayChannel();
     private final RelayChannel channelB = new RelayChannel();
 
-    public Relay(RelaySpec spec) throws IOException {
-        channelA.channel = DatagramChannel.open();
-        channelA.channel.configureBlocking(false);
-        channelB.channel = DatagramChannel.open();
-        channelB.channel.configureBlocking(false);
+    // Save the bits we actually need, the rest can go out of scope with the other
+    // ui bits they are attached to.
+    public Relay(RelayConfiguration rconf) throws RelayException {
+        this(rconf.getRelaySpec(), rconf.getId(), rconf.getStorage());
+    }
+
+    private Relay(RelaySpec spec, int configId, Storage storage) throws RelayException {
 
         this.spec = spec;
+        this.configId = configId;
+        this.storage = storage;
+
+        try {
+            channelA.channel = DatagramChannel.open();
+            channelA.channel.configureBlocking(false);
+            channelB.channel = DatagramChannel.open();
+            channelB.channel.configureBlocking(false);
+        } catch (IOException e) {
+            throw new RelayException("Channel Init Error", e);
+        }
+
 
         /*
             Note that as this is UDP, the definition of client and server are somewhat arbitary,
@@ -81,15 +94,14 @@ class Relay
 
         if (spec.getChanARemoteIP() == null && spec.getChanALocalIP() == null
                 || spec.getChanBLocalIP() == null && spec.getChanBRemoteIP() == null) {
-            throw new IOException("At least one end of the link must specified");
+            throw new RelayException("At least one end of the link must specified");
         }
-        uniqueId = getNextUniqueId();
     }
     /*
         Constructor for creating a new relay from a suspended one
      */
-    public Relay(Relay suspended) throws IOException {
-        this(suspended.spec);
+    public Relay(Relay suspended) throws RelayException {
+        this(suspended.spec, suspended.configId, suspended.storage);
         channelA.readRetriesRemaining = suspended.channelA.readRetriesRemaining -1;
         channelA.writeRetriesRemaining = suspended.channelA.writeRetriesRemaining -1;
         channelB.readRetriesRemaining = suspended.channelB.readRetriesRemaining -1;
@@ -277,9 +289,6 @@ class Relay
         try {channelA.channel.close();} catch (IOException e) {}
         try {channelB.channel.close();} catch (IOException e) {}
     }
-    public RelaySpec getSpec () {
-        return spec;
-    }
     public boolean hasError() {
         return errorState != ErrorState.NONE;
     }
@@ -291,11 +300,8 @@ class Relay
         return channelA.writeRetriesRemaining > 0 && channelA.readRetriesRemaining > 0
                 && channelB.writeRetriesRemaining > 0 && channelB.readRetriesRemaining > 0;
     }
-    public int getUniqueId() {
-        return uniqueId;
-    }
-    public static synchronized int getNextUniqueId() {
-        return nextUniqueId++;
+    public int getConfigId() {
+        return configId;
     }
 
     // Error message state, readable and writable but not updated by this class
@@ -315,5 +321,17 @@ class Relay
         errorLevel = level;
     }
 
+    public Throwable getError() {
+        return error;
+    }
+    // Save the exception wrappered in a new exception containing the user-friendly message.
+    public boolean saveError(String msg, Throwable cause) {
 
+        RelayException ex = new RelayException(msg, cause);
+
+        return storage.saveError(configId, ex);
+    }
+    public boolean saveError(RelayException e) {
+        return storage.saveError(configId, e);
+    }
 }

@@ -22,6 +22,7 @@ package com.daftdroid.android.udprelay;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
@@ -37,11 +38,14 @@ public class MainActivity extends Activity {
 
     private final List<RelayButton> relays = new ArrayList<RelayButton>();
     private Storage storage;
+    private Typeface fontAwesome;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        fontAwesome = Typeface.createFromAsset( getAssets(), "fa-regular-400.ttf" );
 
         /*
             Register for receiving status updates to the buttons in the event
@@ -51,7 +55,7 @@ public class MainActivity extends Activity {
                 new NetServiceBroadcastReceiver(this),
                 new IntentFilter(NetworkService.BROADCAST_ACTION));
 
-        storage = new Storage(getFilesDir());
+        storage = new Storage(getFilesDir(), getCacheDir());
         List<VpnSpecification> vpns = storage.loadAll();
 
         for (VpnSpecification vpn: vpns) {
@@ -103,14 +107,19 @@ public class MainActivity extends Activity {
     public RelayButton getRelayButton(int id) {
         for (RelayButton rb: relays) {
             rb.updateRelay();
-            Relay r = rb.getRelay();
-
-            if (r != null && r.getUniqueId() == id) {
+            if (rb.getSpecId() == id) {
                 return rb;
             }
         }
 
         return null;
+    }
+    public Storage getStorage() {
+        return storage;
+    }
+
+    Typeface getFontAwesome() {
+        return fontAwesome;
     }
 
 }
