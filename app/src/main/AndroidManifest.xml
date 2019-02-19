@@ -44,6 +44,7 @@ This file is part of UdpRelay.
         </activity>
 
         <activity android:name=".config_providers.GenericUDPrelay"/>
+        <activity android:name=".config_providers.VpnRelay"/>
 
         <service android:name=".NetworkService"
             android:exported="false"/>

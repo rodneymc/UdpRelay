@@ -51,7 +51,6 @@ public class RelayButton {
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO don't allow while relay is running
 
                 ((ViewGroup) viewGroup.getParent()).removeView(viewGroup);
 
@@ -64,10 +63,17 @@ public class RelayButton {
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO don't allow while relay is running
-                Intent intent = new Intent(act, GenericUDPrelay.class);
-                intent.putExtra(VpnSpecification.INTENT_ID, spec.getId());
-                act.startActivityForResult(intent, spec.getId());
+
+                Class configClass;
+                try {
+                    configClass = Class.forName(spec.getCreator());
+                    Intent intent = new Intent(act, configClass);
+                    intent.putExtra(VpnSpecification.INTENT_ID, spec.getId());
+                    act.startActivityForResult(intent, spec.getId());
+                } catch (Exception e) {
+                    e.printStackTrace(); // TODO handle this, bad config, incompatible config etc
+                    return;
+                }
             }
         });
 

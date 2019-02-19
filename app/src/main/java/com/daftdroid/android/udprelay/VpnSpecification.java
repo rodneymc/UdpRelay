@@ -8,8 +8,9 @@ import java.io.Serializable;
 public class VpnSpecification implements Serializable, RelayConfiguration {
 
     static final long serialVersionUID = 1L;
-    public VpnSpecification(Storage loader) {
+    public VpnSpecification(Storage loader, Class creator) {
         this.loader = loader;
+        this.creator = creator.getName();
     }
 
     public static final String INTENT_ID =
@@ -28,6 +29,8 @@ public class VpnSpecification implements Serializable, RelayConfiguration {
     // The openVPN configuration. Used for generating the OpenVPN config.
 
     private String vpn; // The common name of the hub
+
+    private final String creator; // Name of the class that created us
 
     // Error status saved separately so we don't have to resave the whole class on error.
     // Also so we can save an error async, if there is no activity running.
@@ -58,6 +61,7 @@ public class VpnSpecification implements Serializable, RelayConfiguration {
     public String getVpn() {
         return vpn;
     }
+    public String getCreator() { return creator; }
     public void setError(Throwable error, boolean saveNow) {
         this.error = error;
         if (saveNow && loader != null) {

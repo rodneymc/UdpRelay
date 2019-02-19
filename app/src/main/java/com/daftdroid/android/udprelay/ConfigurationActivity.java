@@ -106,7 +106,7 @@ public abstract class ConfigurationActivity extends Activity {
 
                 if (!hasError) {
                     String name = ((EditText) findViewById(R.id.configTitle)).getText().toString();
-                    VpnSpecification spec = new VpnSpecification(storage);
+                    VpnSpecification spec = new VpnSpecification(storage, ConfigurationActivity.this.getClass());
                     spec.setTitle(name);
                     spec.setId(relayId);
 

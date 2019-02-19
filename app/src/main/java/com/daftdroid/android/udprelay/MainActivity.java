@@ -30,6 +30,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 
 import com.daftdroid.android.udprelay.config_providers.GenericUDPrelay;
+import com.daftdroid.android.udprelay.config_providers.VpnRelay;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,8 +65,11 @@ public class MainActivity extends Activity {
             addRelay(vpn);
         }
 
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
+
         Button button = new Button(this);
-        button.setText("ADD [APLHA]");
+        button.setText("ADD Generic");
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -75,8 +79,19 @@ public class MainActivity extends Activity {
             }
         });
 
-        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        LinearLayout ll = (LinearLayout)findViewById(R.id.layoutmain);
+        ll.addView(button, lp);
+
+        button = new Button(this);
+        button.setText("ADD VPN");
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, VpnRelay.class);
+                //intent.putExtra(VpnSpecification.INTENT_ID, 1);
+                startActivityForResult(intent, 1);
+            }
+        });
+
         ll.addView(button, lp);
 
     }

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <View android:focusableInTouchMode="true"
+        android:layout_width="0px"
+        android:layout_height="0px"
+        android:id="@+id/dummyfocus"/>
+     <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Relay Name" />
+        <EditText
+            android:id="@+id/configTitle"
+            android:maxLength="20"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="left"
+            android:maxLines="1"
+            android:imeOptions="actionNext"
+            android:inputType="textFilter" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/chanTitle"
+                android:text="Wifi / Bluetooth" />
+
+            <TextView
+                style="@style/chanSubTitle"
+                android:text="Phone" />
+
+            <include
+                android:id="@+id/chanALocip"
+                layout="@layout/ipv4" />
+
+            <TextView
+                style="@style/chanSubTitle"
+                android:text="Client" />
+
+            <include
+                android:id="@+id/chanARemip"
+                layout="@layout/ipv4" />
+
+            <TextView
+                style="@style/chanTitle"
+                android:text="VPN Server" />
+
+            <include
+                android:id="@+id/chanBRemip"
+                layout="@layout/ipv4" />
+
+            <Button
+                android:id="@+id/okbutton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="OK" />
+
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
