@@ -25,7 +25,7 @@ public abstract class ConfigurationActivity extends Activity {
 
         final Storage storage = new Storage(getFilesDir(), getCacheDir());
 
-        setContentView(R.layout.generic_udp_relay);
+        setContentView(getActivityLayout());
         setTitle(getActivityTitle());
 
         final Button okButton = findViewById(R.id.okbutton);
@@ -148,4 +148,5 @@ public abstract class ConfigurationActivity extends Activity {
     protected abstract void initialiseBlankSpec();
     protected abstract void prepareSpecForSave(VpnSpecification spec);
     protected abstract String getActivityTitle();
+    protected abstract int getActivityLayout();
 }

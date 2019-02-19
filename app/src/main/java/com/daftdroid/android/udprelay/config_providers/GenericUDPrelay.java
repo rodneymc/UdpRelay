@@ -19,6 +19,7 @@ public class GenericUDPrelay extends ConfigurationActivity {
 
     // Generate uiComponents for each elements in the input form. The parameters are the
     // elements common to all forms - title and OK button.
+    @Override
     protected List<UiComponent> getUiComponents(View titleText, View okButton) {
 
         List<UiComponent> uiComponents = new ArrayList<UiComponent>();
@@ -42,6 +43,7 @@ public class GenericUDPrelay extends ConfigurationActivity {
 
         return uiComponents;
     }
+    @Override
     protected void processLoadedSpec(VpnSpecification loadedSpec) {
         RelaySpec rly = loadedSpec.getRelaySpec();
 
@@ -54,12 +56,14 @@ public class GenericUDPrelay extends ConfigurationActivity {
         chanBrem.setIpAddress(rly.getChanBRemoteIP());
         chanBrem.setPort(rly.getChanBRemotePort());
     }
+    @Override
     protected void initialiseBlankSpec() {
         chanAloc.initBlank();
         chanBloc.initBlank();
         chanArem.initBlank();
         chanBrem.initBlank();
     }
+    @Override
     protected void prepareSpecForSave(VpnSpecification spec) {
         RelaySpec rly = new RelaySpec(
                 chanAloc.getIpAddress(), chanAloc.getPort(),
@@ -69,7 +73,12 @@ public class GenericUDPrelay extends ConfigurationActivity {
         spec.setSpec(rly);
 
     }
+    @Override
     protected String getActivityTitle() {
         return "Generic UDP Relay";
+    }
+    @Override
+    protected int getActivityLayout() {
+        return R.layout.generic_udp_relay;
     }
 }
