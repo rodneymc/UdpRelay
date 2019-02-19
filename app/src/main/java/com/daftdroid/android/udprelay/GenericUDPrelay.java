@@ -136,7 +136,7 @@ public class GenericUDPrelay extends Activity {
                 } else {
                     String name = ((EditText) findViewById(R.id.configTitle)).getText().toString();
 
-                    RelaySpec rly = new RelaySpec(name,
+                    RelaySpec rly = new RelaySpec(
                             chanAloc.getIpAddress(), chanAloc.getPort(),
                             chanArem.getIpAddress(), chanArem.getPort(),
                             chanBloc.getIpAddress(), chanBloc.getPort(),

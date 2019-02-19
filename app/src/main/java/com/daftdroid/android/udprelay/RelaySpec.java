@@ -13,7 +13,6 @@ public class RelaySpec implements Serializable {
     public static final int EPHEMERAL_PORT = 0;
     public static final int WELL_KNOWN_PORT_OPENVPN = 1194;
 
-    private final String name;
     private final String chanAlocalIP;
     private final int chanAlocalPort;
     private final String chanBlocalIP;
@@ -23,8 +22,6 @@ public class RelaySpec implements Serializable {
     private final String chanAremoteIP;
     private final int chanAremotePort;
 
-    /* Getters */
-    public String getName() {return name;}
     public String getChanALocalIP() {return chanAlocalIP;}
     public int getChanALocalPort() {return chanAlocalPort;}
     public String getChanBLocalIP() {return chanBlocalIP;}
@@ -38,11 +35,10 @@ public class RelaySpec implements Serializable {
         Constructor which takes all of the parameters to full specify the
         relay
      */
-    public RelaySpec(String name, String chanAlocalIP, int chanAlocalPort,
+    public RelaySpec(String chanAlocalIP, int chanAlocalPort,
                      String chanAremoteIP, int chanAremotePort,
                      String chanBlocalIP, int chanBlocalPort,
                      String chanBremoteIP, int chanBremotePort) {
-        this.name = name;
         this.chanAlocalIP = chanAlocalIP;
         this.chanAlocalPort = chanAlocalPort;
         this.chanBlocalIP = chanBlocalIP;
@@ -54,24 +50,7 @@ public class RelaySpec implements Serializable {
     }
 
 
-    /*
-        Examples - you can hard-code some settings here in your private branch
-        in order to get if you want
-     */
-
-    public static final RelaySpec[] exampleRelays=  {
-
-        // Example where we specify everything, note that the parameter chanBlocalIP is
-        // very unlikely to be anything other than RelaySpec.EPHEMERAL_IP, unless you are
-        // specifying a particular gateway - if so you need to know its IP at runtime.
-
-        new RelaySpec("demo", "192.168.42.129", 1195, // our LAN addr
-                "192.168.42.150", 7000, // "client" on the LAN
-                 RelaySpec.EPHEMERAL_IP, 7000, // our GSM address
-                "203.0.113.10", 1196) // remote "server"
-    };
-
-    @Override
+     @Override
     public boolean equals(Object other) {
         if (!(other instanceof RelaySpec)) {
             return false;
