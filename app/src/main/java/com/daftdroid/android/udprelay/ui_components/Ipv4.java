@@ -440,8 +440,9 @@ public class Ipv4 extends UiComponentViewGroup {
             }
         }
     }
-    public boolean isSaveable() {
-        return saveable;
+    @Override
+    public boolean hasError() {
+        return !saveable;
     }
     // Update the status when blank, to be called if setIpAddress or setPort are not
     // called after creation.

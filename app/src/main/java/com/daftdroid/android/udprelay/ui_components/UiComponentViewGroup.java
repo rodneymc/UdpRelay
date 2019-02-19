@@ -18,11 +18,7 @@ public abstract class UiComponentViewGroup extends UiComponent {
 
     protected View focusFirst;
     protected View focusLast;
-    protected boolean blockListeners;
-    private View erroredView;
     private final ViewGroup viewGroup;
-    private final int bg_greyedOut;
-    private final int bg_normal;
 
     public static ViewGroup doInflate(Activity act, int placerHolderId, int componentResource) {
         ViewGroup vg = act.findViewById(placerHolderId);
@@ -35,18 +31,10 @@ public abstract class UiComponentViewGroup extends UiComponent {
         this (doInflate(act, placerHolderId, componentResource));
     }
     public UiComponentViewGroup(ViewGroup viewGroup) {
+        super(viewGroup);
         this.viewGroup = viewGroup;
-        bg_greyedOut = viewGroup.getResources().getColor(R.color.colorGreyedOut);
-        bg_normal = viewGroup.getResources().getColor(R.color.colorEditBg);
     }
 
-    public void requestFocusToErroredView() {
-        if (erroredView != null) {
-            blockListeners = true;
-            erroredView.requestFocus();
-            blockListeners = false;
-        }
-    }
     @Override
     public int getChildFocusIndex() {
         int i = 0;
@@ -93,70 +81,6 @@ public abstract class UiComponentViewGroup extends UiComponent {
 
     protected ViewGroup getViewGroup() {
         return viewGroup;
-    }
-
-    protected void editTextStatus(final EditText e, final EditTextStatus s) {
-        boolean enable = true;
-
-        // TODO a bit of an assumption that this is the only place we need an
-        // onfocus change listener
-
-        switch (s) {
-            case NORMAL:
-                TextViewCompat.setTextAppearance(e, R.style.ipbox);
-                e.setBackgroundColor(bg_normal);
-                e.setOnFocusChangeListener(null);
-                break;
-
-            case SOFT_ERROR:
-                TextViewCompat.setTextAppearance(e, R.style.ipbox_error);
-                e.setBackgroundColor(bg_normal);
-                break;
-            case HARD_ERROR:
-
-                erroredView = e;
-                TextViewCompat.setTextAppearance(e, R.style.ipbox_error);
-                e.setBackgroundColor(bg_normal);
-
-                // If the text is empty, we need to put a ? in it to highlight it
-                if (e.getText().toString().equals("")) {
-
-                    blockListeners = true;
-                    e.setText("?");
-                    blockListeners = false;
-
-                    if (!e.hasFocus()) {
-                        // Remove the question mark when the box gets focus
-
-                        e.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                            @Override
-                            public void onFocusChange(View v, boolean hasFocus) {
-                                if (!blockListeners) {
-                                    e.setText("");
-                                    e.setOnFocusChangeListener(null);
-                                }
-                            }
-                        });
-                    }
-                }
-                break;
-
-            case DISABLED:
-                enable = false;
-
-                if (e.getText().toString().equals("?")) {
-                    blockListeners = true;
-                    e.setText("");
-                    blockListeners = false;
-                }
-
-                e.setTextColor(bg_greyedOut);
-                e.setBackgroundColor(bg_greyedOut);
-
-                break;
-        }
-
-        e.setEnabled(enable);
     }
 
     /*

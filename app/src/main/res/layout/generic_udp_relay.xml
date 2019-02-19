@@ -25,7 +25,7 @@
             android:gravity="left"
             android:maxLines="1"
             android:imeOptions="actionNext"
-            android:inputType="text" />
+            android:inputType="textFilter" />
     </LinearLayout>
 
     <ScrollView

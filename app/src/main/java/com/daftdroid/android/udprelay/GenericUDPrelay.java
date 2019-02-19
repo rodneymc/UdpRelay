@@ -20,8 +20,8 @@ public class GenericUDPrelay extends Activity {
 
     private int relayId;
     private Ipv4 chanAloc, chanArem, chanBloc, chanBrem;
+    private List<UiComponent> uiComponents;
 
-    private List<UiComponent> uiComponents = new ArrayList<UiComponent>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,28 +30,13 @@ public class GenericUDPrelay extends Activity {
         final Storage storage = new Storage(getFilesDir(), getCacheDir());
 
         setContentView(R.layout.generic_udp_relay);
-        setTitle("Generic UDP Relay");
+        setTitle(getActivityTitle());
 
         final Button okButton = findViewById(R.id.okbutton);
 
         final EditText titleText = findViewById(R.id.configTitle);
 
-        UiComponent okButtonComp = new UiComponentView(okButton);
-        UiComponent titleTextComp = new UiComponentView(titleText);
-
-        chanAloc = new Ipv4(findViewById(R.id.chanALocip));
-        chanArem = new Ipv4(findViewById(R.id.chanARemip));
-        chanBloc = new Ipv4(findViewById(R.id.chanBLocip));
-        chanBrem = new Ipv4(findViewById(R.id.chanBRemip));
-
-        // Add the components in focus order
-
-        uiComponents.add(titleTextComp);
-        uiComponents.add(chanAloc);
-        uiComponents.add(chanArem);
-        uiComponents.add(chanBloc);
-        uiComponents.add(chanBrem);
-        uiComponents.add(okButtonComp);
+        uiComponents = getUiComponents(titleText, okButton);
 
         // Link the focusable items together before initialising them with data,
         // or the linking will not work. // TODO this should work though...
@@ -89,24 +74,14 @@ public class GenericUDPrelay extends Activity {
             loadedSpec = storage.load(relayId);
 
             if (loadedSpec != null) {
-                RelaySpec rly = loadedSpec.getRelaySpec();
 
-                chanAloc.setIpAddress(rly.getChanALocalIP());
-                chanAloc.setPort(rly.getChanALocalPort());
-                chanArem.setIpAddress(rly.getChanARemoteIP());
-                chanArem.setPort(rly.getChanARemotePort());
-                chanBloc.setIpAddress(rly.getChanBLocalIP());
-                chanBloc.setPort(rly.getChanBLocalPort());
-                chanBrem.setIpAddress(rly.getChanBRemoteIP());
-                chanBrem.setPort(rly.getChanBRemotePort());
+                processLoadedSpec(loadedSpec);
 
                 titleText.setText(loadedSpec.getTitle());
             } else {
                 relayId = storage.getNewSpecId();
-                chanAloc.initBlank();
-                chanBloc.initBlank();
-                chanArem.initBlank();
-                chanBrem.initBlank();
+                initialiseBlankSpec();
+
             }
 
             // Set the focus to the dummy element, to prevent the focus going somewhere annoying
@@ -119,32 +94,27 @@ public class GenericUDPrelay extends Activity {
             @Override
             public void onClick(View v) {
 
-                chanBrem.validate();
-                chanBloc.validate();
-                chanArem.validate();
-                chanAloc.validate();
+                for (UiComponent u: uiComponents) {
+                    u.validate();
+                }
 
                 // If there is an error, move the focus to the first errored view.
-                if (!chanAloc.isSaveable()) {
-                    chanAloc.requestFocusToErroredView();
-                } else if (!chanArem.isSaveable()) {
-                    chanArem.requestFocusToErroredView();
-                } else if (!chanBloc.isSaveable()) {
-                    chanBloc.requestFocusToErroredView();
-                } else if (!chanBrem.isSaveable()) {
-                    chanBrem.requestFocusToErroredView();
-                } else {
-                    String name = ((EditText) findViewById(R.id.configTitle)).getText().toString();
+                boolean hasError = false;
+                for (UiComponent u: uiComponents) {
+                    if (u.hasError()) {
+                        u.requestFocusToErroredView();
+                        hasError = true;
+                        break;
+                    }
+                }
 
-                    RelaySpec rly = new RelaySpec(
-                            chanAloc.getIpAddress(), chanAloc.getPort(),
-                            chanArem.getIpAddress(), chanArem.getPort(),
-                            chanBloc.getIpAddress(), chanBloc.getPort(),
-                            chanBrem.getIpAddress(), chanBrem.getPort());
+                if (!hasError) {
+                    String name = ((EditText) findViewById(R.id.configTitle)).getText().toString();
                     VpnSpecification spec = new VpnSpecification(storage);
                     spec.setTitle(name);
                     spec.setId(relayId);
-                    spec.setSpec(rly);
+
+                    prepareSpecForSave(spec);
 
                     storage.save(spec);
 
@@ -176,5 +146,60 @@ public class GenericUDPrelay extends Activity {
         outState.putInt("focusParent", focusParentIndex);
         outState.putInt("focusChild", focusChildIndex);
 
+    }
+    // Generate uiComponents for each elements in the input form. The parameters are the
+    // elements common to all forms - title and OK button.
+    protected List<UiComponent> getUiComponents(View titleText, View okButton) {
+
+        List<UiComponent> uiComponents = new ArrayList<UiComponent>();
+
+        UiComponent okButtonComp = new UiComponentView(okButton);
+        UiComponent titleTextComp = new UiComponentView(titleText);
+
+        chanAloc = new Ipv4(findViewById(R.id.chanALocip));
+        chanArem = new Ipv4(findViewById(R.id.chanARemip));
+        chanBloc = new Ipv4(findViewById(R.id.chanBLocip));
+        chanBrem = new Ipv4(findViewById(R.id.chanBRemip));
+
+        // Add the components in focus order
+
+        uiComponents.add(titleTextComp);
+        uiComponents.add(chanAloc);
+        uiComponents.add(chanArem);
+        uiComponents.add(chanBloc);
+        uiComponents.add(chanBrem);
+        uiComponents.add(okButtonComp);
+
+        return uiComponents;
+    }
+    protected void processLoadedSpec(VpnSpecification loadedSpec) {
+        RelaySpec rly = loadedSpec.getRelaySpec();
+
+        chanAloc.setIpAddress(rly.getChanALocalIP());
+        chanAloc.setPort(rly.getChanALocalPort());
+        chanArem.setIpAddress(rly.getChanARemoteIP());
+        chanArem.setPort(rly.getChanARemotePort());
+        chanBloc.setIpAddress(rly.getChanBLocalIP());
+        chanBloc.setPort(rly.getChanBLocalPort());
+        chanBrem.setIpAddress(rly.getChanBRemoteIP());
+        chanBrem.setPort(rly.getChanBRemotePort());
+    }
+    protected void initialiseBlankSpec() {
+        chanAloc.initBlank();
+        chanBloc.initBlank();
+        chanArem.initBlank();
+        chanBrem.initBlank();
+    }
+    protected void prepareSpecForSave(VpnSpecification spec) {
+        RelaySpec rly = new RelaySpec(
+                chanAloc.getIpAddress(), chanAloc.getPort(),
+                chanArem.getIpAddress(), chanArem.getPort(),
+                chanBloc.getIpAddress(), chanBloc.getPort(),
+                chanBrem.getIpAddress(), chanBrem.getPort());
+        spec.setSpec(rly);
+
+    }
+    protected String getActivityTitle() {
+        return "Generic UDP Relay";
     }
 }
