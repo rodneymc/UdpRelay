@@ -54,9 +54,20 @@ public class VpnRelay extends ConfigurationActivity {
     }
     @Override
     protected void initialiseBlankSpec() {
+
+        // Default, assume any client can connect
+        chanArem.setIpAddress(null);
+        chanArem.setPort(0);
+
+        //Default, assume OpenVPN standard port
+        chanAloc.setPort(RelaySpec.WELL_KNOWN_PORT_OPENVPN);
+        chanBrem.setPort(RelaySpec.WELL_KNOWN_PORT_OPENVPN);
+
+        // Set the formatting correctly
         chanAloc.initBlank();
         chanArem.initBlank();
         chanBrem.initBlank();
+
     }
     @Override
     protected void prepareSpecForSave(VpnSpecification spec) {
