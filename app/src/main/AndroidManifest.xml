@@ -43,7 +43,7 @@ This file is part of UdpRelay.
             </intent-filter>
         </activity>
 
-        <activity android:name=".GenericUDPrelay"/>
+        <activity android:name=".config_providers.GenericUDPrelay"/>
 
         <service android:name=".NetworkService"
             android:exported="false"/>

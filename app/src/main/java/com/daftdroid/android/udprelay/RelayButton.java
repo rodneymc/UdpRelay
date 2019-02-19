@@ -7,9 +7,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.daftdroid.android.udprelay.config_providers.GenericUDPrelay;
 import com.daftdroid.android.udprelay.ui_components.UiComponentViewGroup;
 
-import java.io.IOException;
 import java.util.List;
 
 public class RelayButton {

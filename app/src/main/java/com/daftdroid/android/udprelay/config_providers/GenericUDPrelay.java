@@ -1,4 +1,4 @@
-package com.daftdroid.android.udprelay;
+package com.daftdroid.android.udprelay.config_providers;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -9,6 +9,10 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.daftdroid.android.udprelay.R;
+import com.daftdroid.android.udprelay.RelaySpec;
+import com.daftdroid.android.udprelay.Storage;
+import com.daftdroid.android.udprelay.VpnSpecification;
 import com.daftdroid.android.udprelay.ui_components.Ipv4;
 import com.daftdroid.android.udprelay.ui_components.UiComponent;
 import com.daftdroid.android.udprelay.ui_components.UiComponentView;
